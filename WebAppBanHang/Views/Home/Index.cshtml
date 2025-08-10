@@ -1,0 +1,497 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+@* @model WebBanHang.ViewModels.AllTableViewModel; *@
+<!-- Tab Index -->
+<div class="row">
+    <!-- Sidebar bên trái -->
+    <h2 class="title">Chào mừng đến với trang Index!</h2>
+    @* <div class="left-area col-md-2"> *@
+    <div class="left-area">
+        <h4>Danh mục</h4>
+        <ul class="list-group">
+            <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('newproducts')"> New Products </a> </li>
+            <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('promotinalproduct')"> Promotional Products </a></li>
+            <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('allproduct')"> All Products </a></li>
+            <li>
+                <p>Classify</p>
+                <ul>
+                    <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('trousers')"> Trousers </a> </li>
+                    <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('shirts')"> Shirts </a> </li>
+                    <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('shoes')"> Shoes </a> </li>
+                    <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('sandals')"> Sandals </a> </li>
+                    <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('Accessories')"> Accessories </a> </li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Phần hiển thị chính -->
+    @* <div center-area class="col-md-10 text-break overflow-auto p-3" style="max-width: 100%;"> *@
+    <div class="center-area">
+        <h2>Danh Sách Thông tin Người Dùng</h2>
+        <div id="content-area"></div>
+        <!--Nut button-->
+        <div class="flex justify-content-between py-2">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">Add User</button>
+        </div>
+        <!-- Nội dung riêng của Điện thoại -->
+        <div class="flex justify-content-between py-2">
+            <table class="table table-bordered">
+                <thead id="tableHead">
+                    @* <tr>
+                        <th scope="col">Artical</th>
+                        <th scope="col">ProDucts Name</th>
+                        <th scope="col">Description</th>stockQuantity
+                        <th scope="col">Price</th>
+                        <th scope="col">stockQuantity</th>
+                        <th scope="col">Sự kiện</th>                        
+                    </tr> *@
+                </thead>
+                <tbody id="datatable">
+                </tbody>
+
+            </table>
+
+        </div>
+    </div>
+</div>
+
+<!-- Form Update -->
+
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Add Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="loginUserForm" action="/Home/Login" method="post">
+                    <div class="mb-3">
+                        <label for="exampleInputEmaill" class="form-label">Username</label>
+                        <input id="username" name="username" type="text" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="exampleInputEmaill" class="form-label">Password</label>
+                        <input id="password" name="password" type="password" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-primary" onclick="addWorkController()">Xác nhận</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!--Code-->
+@section Scripts {
+    <script>
+        function changeContent(content) { //Selection-Buttons
+            console.log("Change content to: ", content);
+            const contentArea = document.getElementById("content-area");
+            switch (content) {
+                case 'newproducts':
+                    contentArea.innerHTML = '<h3>New Products</h3><p>Here are the latest products.</p>';
+                    $(document).ready(function() {
+                        renderTableNewProduct();
+                    });
+                    function renderTableNewProduct(){
+                        $("#tableHead").html(`
+                            <tr>
+                                <th scope="col">Artical</th>
+                                <th scope="col">ProDucts Name</th>
+                                <th scope="col">Description</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">Stock Quantity</th>
+                                <th scope="col">Sự kiện</th>
+                            </tr>
+                        `);
+                        $.ajax({
+                            url: '/Home/NewProduct',
+                            type: 'GET',
+                            success: function (data){
+                                $("#datatable").empty();
+                                console.log("DATA CONTROLLER: ", data.length);
+                                console.log("DATA CONTROLLER: ", data);
+                                if(data.length > 0){
+                                    data.map((item, index) => {
+                                        $("#datatable").append(`
+                                            <tr>
+                                                <td>${index +1 }</td>
+                                                <td>${item.name}</td>
+                                                <td>${item.description}</td>
+                                                <td>${item.price}</td>
+                                                <td>${item.stockQuantity}</td>
+                                                <td>
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">Add User</button>
+                                                </td>
+                                            </tr>`
+                                        );
+                                    });
+                                }
+                            },
+                            error: function(error) {
+                                console.log(error)
+                            }
+                        });
+                    }
+                    break;
+                case 'promotinalproduct':
+                    contentArea.innerHTML = '<h3>Promotional Products</h3><p>Check out our promotional products.</p>';
+                    $(document).ready(function() {
+                        renderTableUserController();
+                    });
+                    function renderTableUserController(){
+                        $("#tableHead").html(`
+                            <tr>
+                                <th scope="col">Artical</th>
+                                <th scope="col">ProDucts Name</th>
+                                <th scope="col">Description</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">Stock Quantity</th>
+                                <th scope="col">Discount</th>
+                                <th scope="col">Sự kiện</th>
+                            </tr>
+                        `);
+                        $.ajax({
+                            url: '/Home/NewProduct',
+                            type: 'GET',
+                            success: function (data){
+                                $("#datatable").empty();
+                                console.log("DATA CONTROLLER: ", data.length);
+                                console.log("DATA CONTROLLER: ", data);
+                                if(data.length > 0){
+                                    data.map((item, index) => {
+                                        $("#datatable").append(`
+                                            <tr>
+                                                <td>${index +1 }</td>
+                                                <td>${item.name}</td>
+                                                <td>${item.description}</td>
+                                                <td>${item.price}</td>
+                                                <td>${item.stockQuantity}</td>
+                                                <td>${item.categoryId}</td>
+                                                <td class="text-center">
+                                                <a href="javascript:void(0);" class="px-2" onclick="Buy('${item.id}')">
+                                                Buy
+                                                </a>
+                                                </td>
+                                            </tr>`
+                                        );
+                                    });
+                                }
+                            },
+                            error: function(error) {
+                                console.log(error)
+                            }
+                        });
+                    }
+                    break;
+                case 'allproduct':
+                    contentArea.innerHTML = '<h3>All Products</h3><p>Here is a list of all products.</p>';
+                    $(document).ready(function() {
+                        renderTableUserController();
+                    });
+                    function renderTableUserController(){
+                        $("#tableHead").html(`
+                            <tr>
+                                <th scope="col">Artical</th>
+                                <th scope="col">ProDucts Name</th>
+                                <th scope="col">Description</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">Stock Quantity</th>
+                                <th scope="col">Discount</th>
+                                <th scope="col">Sự kiện</th>
+                            </tr>
+                        `);
+                        $.ajax({
+                            url: '/Home/NewProduct',
+                            type: 'GET',
+                            success: function (data){
+                                $("#datatable").empty();
+                                console.log("DATA CONTROLLER: ", data.length);
+                                console.log("DATA CONTROLLER: ", data);
+                                if(data.length > 0){
+                                    data.map((item, index) => {
+                                        $("#datatable").append(`
+                                            <tr>
+                                                <td>${index +1 }</td>
+                                                <td>${item.name}</td>
+                                                <td>${item.description}</td>
+                                                <td>${item.price}</td>
+                                                <td>${item.stockQuantity}</td>
+                                                <td>${item.categoryId}</td>
+                                                <td class="text-center">
+                                                <a href="javascript:void(0);" class="px-2" onclick="Buy('${item.id}')">
+                                                Buy
+                                                </a>
+                                                </td>
+                                            </tr>`
+                                        );
+                                    });
+                                }
+                            },
+                            error: function(error) {
+                                console.log(error)
+                            }
+                        });
+                    }
+                    break;
+                case 'trousers':
+                    contentArea.innerHTML = '<h3>All Products</h3><p>Here is a list of all products.</p>';
+                    $(document).ready(function() {
+                        renderTableUserController();
+                    });
+                    function renderTableUserController(){
+                        $("#tableHead").html(`
+                            <tr>
+                                <th scope="col">Artical</th>
+                                <th scope="col">ProDucts Name</th>
+                                <th scope="col">Description</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">Stock Quantity</th>
+                                <th scope="col">Discount</th>
+                                <th scope="col">Sự kiện</th>
+                            </tr>
+                        `);
+                        $.ajax({
+                            url: '/Home/NewProduct',
+                            type: 'GET',
+                            success: function (data){
+                                $("#datatable").empty();
+                                console.log("DATA CONTROLLER: ", data.length);
+                                console.log("DATA CONTROLLER: ", data);
+                                if(data.length > 0){
+                                    data.map((item, index) => {
+                                        $("#datatable").append(`
+                                            <tr>
+                                                <td>${index +1 }</td>
+                                                <td>${item.name}</td>
+                                                <td>${item.description}</td>
+                                                <td>${item.price}</td>
+                                                <td>${item.stockQuantity}</td>
+                                                <td>${item.categoryId}</td>
+                                                <td class="text-center">
+                                                <a href="javascript:void(0);" class="px-2" onclick="Buy('${item.id}')">
+                                                Buy
+                                                </a>
+                                                </td>
+                                            </tr>`
+                                        );
+                                    });
+                                }
+                            },
+                            error: function(error) {
+                                console.log(error)
+                            }
+                        });
+                    }
+                    break;
+                case 'shirts':
+                    contentArea.innerHTML = '<h3>All Products</h3><p>Here is a list of all products.</p>';
+                    $(document).ready(function() {
+                        renderTableUserController();
+                    });
+                    function renderTableUserController(){
+                        $("#tableHead").html(`
+                            <tr>
+                                <th scope="col">Artical</th>
+                                <th scope="col">ProDucts Name</th>
+                                <th scope="col">Description</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">Stock Quantity</th>
+                                <th scope="col">Discount</th>
+                                <th scope="col">Sự kiện</th>
+                            </tr>
+                        `);
+                        $.ajax({
+                            url: '/Home/NewProduct',
+                            type: 'GET',
+                            success: function (data){
+                                $("#datatable").empty();
+                                console.log("DATA CONTROLLER: ", data.length);
+                                console.log("DATA CONTROLLER: ", data);
+                                if(data.length > 0){
+                                    data.map((item, index) => {
+                                        $("#datatable").append(`
+                                            <tr>
+                                                <td>${index +1 }</td>
+                                                <td>${item.name}</td>
+                                                <td>${item.description}</td>
+                                                <td>${item.price}</td>
+                                                <td>${item.stockQuantity}</td>
+                                                <td>${item.categoryId}</td>
+                                                <td class="text-center">
+                                                <a href="javascript:void(0);" class="px-2" onclick="Buy('${item.id}')">
+                                                Buy
+                                                </a>
+                                                </td>
+                                            </tr>`
+                                        );
+                                    });
+                                }
+                            },
+                            error: function(error) {
+                                console.log(error)
+                            }
+                        });
+                    }
+                    break;
+                case 'shoes':
+                    contentArea.innerHTML = '<h3>All Products</h3><p>Here is a list of all products.</p>';
+                    $(document).ready(function() {
+                        renderTableUserController();
+                    });
+                    function renderTableUserController(){
+                        $("#tableHead").html(`
+                            <tr>
+                                <th scope="col">Artical</th>
+                                <th scope="col">ProDucts Name</th>
+                                <th scope="col">Description</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">Stock Quantity</th>
+                                <th scope="col">Discount</th>
+                                <th scope="col">Sự kiện</th>
+                            </tr>
+                        `);
+                        $.ajax({
+                            url: '/Home/NewProduct',
+                            type: 'GET',
+                            success: function (data){
+                                $("#datatable").empty();
+                                console.log("DATA CONTROLLER: ", data.length);
+                                console.log("DATA CONTROLLER: ", data);
+                                if(data.length > 0){
+                                    data.map((item, index) => {
+                                        $("#datatable").append(`
+                                            <tr>
+                                                <td>${index +1 }</td>
+                                                <td>${item.name}</td>
+                                                <td>${item.description}</td>
+                                                <td>${item.price}</td>
+                                                <td>${item.stockQuantity}</td>
+                                                <td>${item.categoryId}</td>
+                                                <td class="text-center">
+                                                <a href="javascript:void(0);" class="px-2" onclick="Buy('${item.id}')">
+                                                Buy
+                                                </a>
+                                                </td>
+                                            </tr>`
+                                        );
+                                    });
+                                }
+                            },
+                            error: function(error) {
+                                console.log(error)
+                            }
+                        });
+                    }
+                    break;
+                case 'sandals':
+                    contentArea.innerHTML = '<h3>All Products</h3><p>Here is a list of all products.</p>';
+                    $(document).ready(function() {
+                        renderTableUserController();
+                    });
+                    function renderTableUserController(){
+                        $("#tableHead").html(`
+                            <tr>
+                                <th scope="col">Artical</th>
+                                <th scope="col">ProDucts Name</th>
+                                <th scope="col">Description</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">Stock Quantity</th>
+                                <th scope="col">Discount</th>
+                                <th scope="col">Sự kiện</th>
+                            </tr>
+                        `);
+                        $.ajax({
+                            url: '/Home/NewProduct',
+                            type: 'GET',
+                            success: function (data){
+                                $("#datatable").empty();
+                                console.log("DATA CONTROLLER: ", data.length);
+                                console.log("DATA CONTROLLER: ", data);
+                                if(data.length > 0){
+                                    data.map((item, index) => {
+                                        $("#datatable").append(`
+                                            <tr>
+                                                <td>${index +1 }</td>
+                                                <td>${item.name}</td>
+                                                <td>${item.description}</td>
+                                                <td>${item.price}</td>
+                                                <td>${item.stockQuantity}</td>
+                                                <td>${item.categoryId}</td>
+                                                <td class="text-center">
+                                                <a href="javascript:void(0);" class="px-2" onclick="Buy('${item.id}')">
+                                                Buy
+                                                </a>
+                                                </td>
+                                            </tr>`
+                                        );
+                                    });
+                                }
+                            },
+                            error: function(error) {
+                                console.log(error)
+                            }
+                        });
+                    }
+                    break;
+                case 'Accessories':
+                    contentArea.innerHTML = '<h3>All Products</h3><p>Here is a list of all products.</p>';
+                    $(document).ready(function() {
+                        renderTableUserController();
+                    });
+                    function renderTableUserController(){
+                        $("#tableHead").html(`
+                            <tr>
+                                <th scope="col">Artical</th>
+                                <th scope="col">ProDucts Name</th>
+                                <th scope="col">Description</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">Stock Quantity</th>
+                                <th scope="col">Discount</th>
+                                <th scope="col">Sự kiện</th>
+                            </tr>
+                        `);
+                        $.ajax({
+                            url: '/Home/NewProduct',
+                            type: 'GET',
+                            success: function (data){
+                                $("#datatable").empty();
+                                console.log("DATA CONTROLLER: ", data.length);
+                                console.log("DATA CONTROLLER: ", data);
+                                if(data.length > 0){
+                                    data.map((item, index) => {
+                                        $("#datatable").append(`
+                                            <tr>
+                                                <td>${index +1 }</td>
+                                                <td>${item.name}</td>
+                                                <td>${item.description}</td>
+                                                <td>${item.price}</td>
+                                                <td>${item.stockQuantity}</td>
+                                                <td>${item.categoryId}</td>
+                                                <td class="text-center">
+                                                <a href="javascript:void(0);" class="px-2" onclick="Buy('${item.id}')">
+                                                Buy
+                                                </a>
+                                                </td>
+                                            </tr>`
+                                        );
+                                    });
+                                }
+                            },
+                            error: function(error) {
+                                console.log(error)
+                            }
+                        });
+                    }
+                    break;
+                default:
+                    contentArea.innerHTML = "<h3>Danh Sách Thông tin Người Dùng</h3>";
+            }
+        }
+    </script>
+}

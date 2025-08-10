@@ -1,0 +1,165 @@
+﻿
+@{
+    ViewData["Title"] = "Admin";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@model WebAppBanHang.Models.Entity.User
+
+<!-- Tab Index -->
+<div class="row">
+    <!-- Sidebar bên trái -->
+    @* <div class="left-area col-md-2"> *@
+    <div class="left-area">
+        <h4>Danh mục</h4>
+        <ul class="list-group">
+            <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('tableuser')"> Table User </a> </li>
+            <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('tableproduct')"> Table Product </a></li>
+            <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('allproduct')"> All Products </a></li>            
+        </ul>
+    </div>
+
+    <!-- Phần hiển thị chính -->
+    @* <div center-area class="col-md-10 text-break overflow-auto p-3" style="max-width: 100%;"> *@
+    <div class="center-area">
+        <h2>Danh Sách Thông tin Người Dùng</h2>
+        <div id="content-area"></div>
+        <!--Nut button-->
+        <div class="flex justify-content-between py-2">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">Add User</button>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">Add Product</button>
+        </div>
+        <!-- Nội dung riêng của Điện thoại -->
+        <div class="flex justify-content-between py-2">
+            <table class="table table-bordered">
+                <thead id="tableHead">
+                    <tr>
+                        <th scope="col">Number</th>
+                        <th scope="col">UserName</th>
+                        <th scope="col">Password</th>
+                        <th scope="col">FullName</th>
+                        <th scope="col">DateOfBirth</th>
+                        <th scope="col">Email</th>
+                        <th scope="col">PhoneNumber</th>
+                    </tr>
+                </thead>
+                <tbody id="datatable">
+                </tbody>
+
+            </table>
+
+        </div>
+    </div>
+</div>
+
+
+
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Add Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="userid" hidden class="form-control"> <!--id mđ ẩn đi-->
+                <form id="adminForm" action="/Home/AdminView" method="post">
+                    <div class="mb-3">
+                        <label for="exampleInputEmaill" class="form-label">Username</label>
+                        <input id="username" name="username" type="text" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="exampleInputEmaill" class="form-label">Password</label>
+                        <input id="password" name="password" type="password" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="exampleInputEmaill" class="form-label">FullName</label>
+                        <input id="fullname" name="fullname" type="text" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="exampleInputEmaill" class="form-label">Date Of Birth</label>
+                        <input id="dateofbirth" name="dateofbirth" type="text" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="exampleInputEmaill" class="form-label">Email</label>
+                        <input id="email" name="email" type="email" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="exampleInputEmaill" class="form-label">PhoneNumber</label>
+                        <input id="phonenumber" name="phonenumber" type="text" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-primary" onclick="addUserAdmin()">Xác nhận</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            renderTableNewProduct();
+        });
+                    function renderTableNewProduct(){                        
+                        $.ajax({
+                            url: '/Home/GetUser',
+                            type: 'GET',
+                            success: function (data){
+                                $("#datatable").empty();
+                                console.log("DATA CONTROLLER: ", data.length);
+                                console.log("DATA CONTROLLER: ", data);
+                                if(data.length > 0){
+                                    data.map((item, index) => {
+                                        $("#datatable").append(`
+                                            <tr>
+                                                <td>${index +1 }</td>
+                                                <td>${item.userName}</td>
+                                                <td>${item.password}</td>
+                                                <td>${item.fullName}</td>
+                                                <td>${item.dateOfBirth}</td>
+                                                <td>${item.email}</td>
+                                                <td>${item.phoneNumber}</td>
+                                                
+                                            </tr>`
+                                        );
+                                    });
+                                }
+                            },
+                            error: function(error) {
+                                console.log(error)
+                                console.log("Lỗi khi gọi GetUser:", error); 
+                            }
+                        });
+                    }
+        function addUserAdmin() {
+            let userid = $("#userid").val();
+            console.log("UserID: ", userid)
+            let username = $("#username").val();
+            let password = $("#password").val();
+            let dateofbirth = $("#dateofbirth").val();
+            let email = $("#email").val();
+            let phonenumber = $("#phonenumber").val();
+
+            $.ajax({
+                url:'/Home/AdminView',
+                type:'POST',
+                data: {
+                    UserName: username,
+                    Password: password,
+                    DateOfBirth: dateofbirth,
+                    Email: email,
+                    PhoneNumber: phonenumber
+                },
+                success: function (data) {
+                    console.log(data);
+                    console.log("Lay thanh cong");
+                    $("#exampleModal").modal('hide');// an mmodel da tao di
+                    //resetForm();
+                    renderTableNewProduct(); //hàm này dùng để gọi lại
+                },
+                error: function (error) {
+                    console.log(error)
+                }
+            });
+        }
+    </script>
+}
