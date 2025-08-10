@@ -32,7 +32,7 @@
         <div class="flex justify-content-between py-2">
             <table class="table table-bordered">
                 <thead id="tableHead">
-                    <tr>
+                    @* <tr>
                         <th scope="col">Number</th>
                         <th scope="col">UserName</th>
                         <th scope="col">Password</th>
@@ -40,7 +40,9 @@
                         <th scope="col">DateOfBirth</th>
                         <th scope="col">Email</th>
                         <th scope="col">PhoneNumber</th>
-                    </tr>
+                        <th scope="col">PhoneNumber</th>
+                        <th scope="col">Even</th>
+                    </tr> *@
                 </thead>
                 <tbody id="datatable">
                 </tbody>
@@ -51,8 +53,7 @@
     </div>
 </div>
 
-
-
+<!--TAB HIDDEN-->
 <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -62,30 +63,34 @@
             </div>
             <div class="modal-body">
                 <input type="text" id="userid" hidden class="form-control"> <!--id mđ ẩn đi-->
-                <form id="adminForm" action="/Home/AdminView" method="post">
+                <form id="adminForm"  method="post">
                     <div class="mb-3">
-                        <label for="exampleInputEmaill" class="form-label">Username</label>
+                        <label for="username" class="form-label">Username</label>
                         <input id="username" name="username" type="text" class="form-control">
                     </div>
                     <div class="mb-3">
-                        <label for="exampleInputEmaill" class="form-label">Password</label>
+                        <label for="password" class="form-label">Password</label>
                         <input id="password" name="password" type="password" class="form-control">
                     </div>
                     <div class="mb-3">
-                        <label for="exampleInputEmaill" class="form-label">FullName</label>
+                        <label for="fullname" class="form-label">FullName</label>
                         <input id="fullname" name="fullname" type="text" class="form-control">
                     </div>
                     <div class="mb-3">
-                        <label for="exampleInputEmaill" class="form-label">Date Of Birth</label>
+                        <label for="dateofbirth" class="form-label">Date Of Birth</label>
                         <input id="dateofbirth" name="dateofbirth" type="text" class="form-control">
                     </div>
                     <div class="mb-3">
-                        <label for="exampleInputEmaill" class="form-label">Email</label>
+                        <label for="email" class="form-label">Email</label>
                         <input id="email" name="email" type="email" class="form-control">
                     </div>
                     <div class="mb-3">
-                        <label for="exampleInputEmaill" class="form-label">PhoneNumber</label>
+                        <label for="phonenumber" class="form-label">PhoneNumber</label>
                         <input id="phonenumber" name="phonenumber" type="text" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="isactive" class="form-label">isActive</label>
+                        <input id="isactive" name="isactive" type="text" class="form-control">
                     </div>
                     <button type="submit" class="btn btn-primary" onclick="addUserAdmin()">Xác nhận</button>
                 </form>
@@ -96,10 +101,31 @@
 
 @section Scripts {
     <script>
-        $(document).ready(function() {
-            renderTableNewProduct();
-        });
-                    function renderTableNewProduct(){                        
+        function changeContent(content) { //Selection-Buttons
+            console.log("Change content to: ", content);
+            const contentArea = document.getElementById("content-area");
+            switch (content) {
+                case 'tableuser':
+                    // contentArea.innerHTML = '<h3>New Products</h3><p>Here are the latest products.</p>';
+                    $(document).ready(function() {
+                        renderTableUserAdmin();
+                    });
+                    function renderTableUserAdmin(){
+                        $("#tableHead").html(`
+                            <tr>
+                                <th scope="col">Number</th>
+                                <th scope="col">UserName</th>
+                                <th scope="col">Password</th>
+                                <th scope="col">FullName</th>
+                                <th scope="col">DateOfBirth</th>
+                                <th scope="col">Email</th>
+                                <th scope="col">PhoneNumber</th>
+                                <th scope="col">CreatedAt</th>
+                                <th scope="col">UpdatedAt</th>
+                                <th scope="col">IsActive</th>
+                                <th scope="col">Even</th>
+                            </tr>
+                        `);
                         $.ajax({
                             url: '/Home/GetUser',
                             type: 'GET',
@@ -118,7 +144,17 @@
                                                 <td>${item.dateOfBirth}</td>
                                                 <td>${item.email}</td>
                                                 <td>${item.phoneNumber}</td>
-                                                
+                                                <td>${item.createdAt}</td>
+                                                <td>${item.updatedAt}</td>
+                                                <td>${item.isActive}</td>
+                                                <td>
+                                                <a href="javascript:void(0);" class="px-2" onclick="deleteUserAdmin('${item.userId}')">
+                                                    Delete
+                                                </a>
+                                                <a href="javascript:void(0);" class="px-2" onclick="updateUserAdmin('${item.userId}')">
+                                                    Edit
+                                                </a>
+                                                </td>
                                             </tr>`
                                         );
                                     });
@@ -130,36 +166,102 @@
                             }
                         });
                     }
+                    break;
+                default:
+                    contentArea.innerHTML = "<h3>Danh Sách Thông tin Người Dùng</h3>";
+            }
+        }
+        // Function USER
         function addUserAdmin() {
             let userid = $("#userid").val();
             console.log("UserID: ", userid)
             let username = $("#username").val();
             let password = $("#password").val();
+            let fullname = $("#fullname").val();
             let dateofbirth = $("#dateofbirth").val();
             let email = $("#email").val();
             let phonenumber = $("#phonenumber").val();
+            let isactive = $("#isactive").val();
 
             $.ajax({
-                url:'/Home/AdminView',
-                type:'POST',
+                url:userid=="" ? '/Home/AddUserAdmin' : '/Home/UpdateUserAdmin/' + userid,
+                type:userid=="" ? 'POST' : 'PUT',
                 data: {
                     UserName: username,
                     Password: password,
+                    fullName: fullname,
                     DateOfBirth: dateofbirth,
                     Email: email,
-                    PhoneNumber: phonenumber
+                    PhoneNumber: phonenumber,
+                    IsActive: isactive
                 },
                 success: function (data) {
                     console.log(data);
                     console.log("Lay thanh cong");
                     $("#exampleModal").modal('hide');// an mmodel da tao di
-                    //resetForm();
-                    renderTableNewProduct(); //hàm này dùng để gọi lại
+                    resetForm();
+                    //renderTableUserAdmin(); //hàm này dùng để gọi lại
+                    //changeContent('tableuser');//goi lai tableuser
                 },
                 error: function (error) {
                     console.log(error)
                 }
             });
         }
+        function resetForm() {
+            //console.log("Chay resetForm")
+            $("#userid").val("");
+            $("#username").val("");
+            $("#password").val("");
+            $("#dateofbirth").val("");
+            $("#email").val("");
+            $("#phonenumber").val("");
+        }
+
+        function deleteUserAdmin(ma_ao) {
+            console.log(ma_ao);
+            $.ajax({
+                url: '/Home/DeleteUserAdmin/' + ma_ao,
+                type: 'DELETE',
+                success: function (data){
+                    console.log("Xoa Thanh Cong");
+                    alert("Xoa ThanhCong");
+                    //renderTableUserAdmin();
+                    changeContent('tableuser');//goi lai tableuser
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        }
+        function updateUserAdmin(ma_ao) {
+            console.log(ma_ao);
+            $.ajax({
+                url: '/Home/DetailUserAdmin/' + ma_ao,
+                type: 'GET',
+                success: function (data){
+                    console.log("Lay thong tin de update");
+                    alert("Lay thong tin de update Thanh Cong");                    
+
+                    $("#userid").val(data.userId);
+                    $("#username").val(data.userName);
+                    $("#password").val(data.password);
+                    $("#fullname").val(data.fullName);
+                    $("#dateofbirth").val(data.dateOfBirth);
+                    $("#email").val(data.email);
+                    $("#phonenumber").val(data.phoneNumber);
+                    $("#updateat").val(data.updatedAt);
+                    $("#isactive").val(data.isActive);
+                    //renderTableUserController();
+                    console.log(data);
+                    //Hien model len
+                    $("#exampleModal").modal('show');
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        }
+
     </script>
 }

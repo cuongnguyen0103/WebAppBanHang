@@ -36,7 +36,7 @@ namespace WebAppBanHang.Controllers
             }
         }
 
-        //GET USER
+        //GET USER Admin
         public IActionResult GetUser()
         {
             var users = _context.Users.ToList();
@@ -46,14 +46,15 @@ namespace WebAppBanHang.Controllers
             }
             return Ok(users);
         }
-        //AdminView
+        // View AdminView
         public IActionResult AdminView()
         {            
             return View();
         }
 
+        // POST USER Admin
         [HttpPost]
-        public async Task<IActionResult> AdminView(User input)
+        public async Task<IActionResult> AddUserAdmin(User input)
         {
             User user = new User();
             user.UserName = input.UserName;
@@ -64,11 +65,11 @@ namespace WebAppBanHang.Controllers
             user.PhoneNumber = input.PhoneNumber;
             user.CreatedAt = DateTime.Now;
             user.UpdatedAt = DateTime.Now;
-            user.IsActive = true;
+            user.IsActive = input.IsActive;
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-            return View();
+            return RedirectToAction();
             //var userId = HttpContext.Session.GetInt32("UserId");
             //if (userId == null)
             //{
@@ -82,7 +83,62 @@ namespace WebAppBanHang.Controllers
             //return View(user);
             }
 
+        // Delete User Admin
+        [HttpDelete("/Home/DeleteUserAdmin/{id}")]
+        public async Task<IActionResult> DeleteUserAdmin(int id)
+        {
+            var user = _context.Users.Find(id);
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
 
+        // GET id to UpdateUser
+        [HttpGet("/Home/DetailUserAdmin/{id}")]
+        public async Task<IActionResult> DetailUserAdmin(int id)
+        {
+            //lay du lieu sql
+            var item = _context.Users.FirstOrDefault(x => x.UserId == id);
+            if (item == null) return NotFound();
+            return Ok(item);
+        }
+        // PUT User Id
+        [HttpPut("/Home/UpdateUserAdmin/{id}")]
+        public async Task<IActionResult> UpdateUserAdmin(int id, User input)
+        {
+            //Data Validation 
+            if (!ModelState.IsValid)
+            {
+                // Returns a View with data errors to display information
+                return View(input);
+            }
+            var update = _context.Users.Find(id);
+            if (update == null)
+            {
+                return NotFound();
+            }
+            else
+            {
+                update.UserName = input.UserName;
+                update.Password = input.Password;
+                update.FullName = input.FullName;
+                update.DateOfBirth = input.DateOfBirth;
+                update.Email = input.Email;
+                update.PhoneNumber = input.PhoneNumber;
+                update.UpdatedAt = DateTime.Now;
+                update.IsActive = input.IsActive;
+
+                await _context.SaveChangesAsync();
+            }
+            return Ok();
+        }
+
+
+        // PRODUCTS
         public IActionResult Privacy()
         {
             return View();
