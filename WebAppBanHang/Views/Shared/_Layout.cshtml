@@ -27,10 +27,21 @@
                         </li>
                     </ul>
                     <ul class="nav navbar-nav">
-                        <li class="nav-item">
+                        @* <li class="nav-item">
                             <a class="nav-link" asp-controller="Home" asp-action="Login">Login</a>
                             <a class="nav-link" asp-controller="Home" asp-action="UserInfo">UserInfo</a>
-                        </li>
+                        </li> *@
+                        @if (Context.Session.GetString("UserName") != null)
+                        {
+                            <span class="nav-link">Xin chào, @Context.Session.GetString("UserName")</span>
+                            <a class="nav-link" asp-controller="Home" asp-action="UserInfo">Login</a>
+                            <a class="nav-link" asp-controller="Home" asp-action="Logout">Đăng xuất</a>
+                            <a class="nav-link" asp-controller="Home" asp-action="UserInfo">UserInfo</a>
+                        }
+                        else
+                        {
+                            <a class="nav-link" asp-controller="Home" asp-action="Login">Login</a>
+                        }
                     </ul>
                 </div>
             </div>

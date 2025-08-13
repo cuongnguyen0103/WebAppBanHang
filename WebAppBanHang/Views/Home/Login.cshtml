@@ -1,0 +1,53 @@
+﻿@{
+    ViewData["Title"] = "Login";
+        Layout = "~/Views/Shared/_Layout.cshtml";
+    }
+@model WebAppBanHang.Models.Entity.User;
+
+<h2>Login</h2>
+
+<!--Form Login-->
+<form class="w-25" action="/Home/Login" method="post">
+    <div class="mb-3">
+        <label asp-for="UserName" for="username" class="form-label">Username</label>
+        <input asp-for="UserName" id="username" name="username" type="text" class="form-control">
+    </div>
+    <div class="mb-3">
+        <label asp-for="Password" for="password" class="form-label">Password</label>
+        <input asp-for="Password" id="password" name="password" type="password" class="form-control">
+    </div>
+    <button type="submit" class="btn btn-primary" onclick="loginController()">Xác nhận</button>
+</form>
+
+@section Scripts {
+    <script>
+        function loginController() {
+            let username = $("#username").val();
+            let password = $("#password").val();
+            console.log("U P: ", username,password)
+
+            $.ajax({
+                url: '/Home/Login',
+                type:'POST',
+                data: {
+                    UserName: username,
+                    Password: password
+                },
+                success: function (data) {
+                    console.log(data);
+                    // console.log("Lay thanh cong");
+                    // $("#exampleModal").modal('hide');an mmodel da tao di
+                    // $("#exampleModal").modal('hide');
+                    // resetForm();
+                    // renderTableWorkController() hàm này dùng để gọi lại
+                },
+                error: function (xhr,   error) {
+                    console.log(error);
+                    console.log("Loi");
+                    alert("Loi1");
+                    console.log("Status:", xhr.status);
+                }
+            });
+        }
+    </script>
+}

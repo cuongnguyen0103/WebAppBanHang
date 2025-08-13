@@ -3,7 +3,8 @@
     ViewData["Title"] = "Admin";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
-@model WebAppBanHang.Models.Entity.User
+@* @model WebAppBanHang.Models.Entity.User *@
+@model WebAppBanHang.ViewModels.AllTablesViewModel
 
 <!-- Tab Index -->
 <div class="row">
@@ -25,8 +26,8 @@
         <div id="content-area"></div>
         <!--Nut button-->
         <div class="flex justify-content-between py-2">
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">Add User</button>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">Add Product</button>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal">Add User</button>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#productModal">Add Product</button>
         </div>
         <!-- Nội dung riêng của Điện thoại -->
         <div class="flex justify-content-between py-2">
@@ -54,11 +55,12 @@
 </div>
 
 <!--TAB HIDDEN-->
-<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<!--USER-->
+<div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Add Product</h5>
+                <h5 class="modal-title" id="userModalLabel">Add Product</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -78,7 +80,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="dateofbirth" class="form-label">Date Of Birth</label>
-                        <input id="dateofbirth" name="dateofbirth" type="text" class="form-control">
+                        <input id="dateofbirth" name="dateofbirth" type="datetime" class="form-control">
                     </div>
                     <div class="mb-3">
                         <label for="email" class="form-label">Email</label>
@@ -89,10 +91,48 @@
                         <input id="phonenumber" name="phonenumber" type="text" class="form-control">
                     </div>
                     <div class="mb-3">
-                        <label for="isactive" class="form-label">isActive</label>
-                        <input id="isactive" name="isactive" type="text" class="form-control">
+                        <label for="user_isactive" class="form-label">isActive</label>
+                        <input id="user_isactive" name="user_isactive" type="text" class="form-control">
                     </div>
                     <button type="submit" class="btn btn-primary" onclick="addUserAdmin()">Xác nhận</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--PRODUCT-->
+<div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="productModalLabel">Add Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="productid" hidden class="form-control"> <!--id mđ ẩn đi-->
+                <form id="productForm" method="post">                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name</label>
+                        <input id="name" name="name" type="text" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <input id="description" name="description" type="text" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="price" class="form-label">Price</label>
+                        <input id="price" name="price" type="number" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="stockquantity" class="form-label">StockQuantity</label>
+                        <input id="stockquantity" name="stockquantity" type="number" class="form-control">
+                    </div>                    
+                    <div class="mb-3">
+                        <label for="product_isactive" class="form-label">isActive</label>
+                        <input id="product_isactive" name="product_isactive" type="text" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-primary" onclick="addProductAdmin()">Xác nhận</button>
                 </form>
             </div>
         </div>
@@ -167,6 +207,66 @@
                         });
                     }
                     break;
+                case 'tableproduct':
+                    // contentArea.innerHTML = '<h3>New Products</h3><p>Here are the latest products.</p>';
+                    $(document).ready(function() {
+                        renderTableProductAdmin();
+                    });
+                    function renderTableProductAdmin(){
+                        $("#tableHead").html(`
+                            <tr>
+                                <th scope="col">Number</th>
+                                <th scope="col">ProductId</th>
+                                <th scope="col">Name</th>
+                                <th scope="col">Description</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">StockQuantity</th>
+                                <th scope="col">CreatedAt</th>
+                                <th scope="col">UpdatedAt</th>
+                                <th scope="col">IsActive</th>
+                                <th scope="col">Even</th>
+                            </tr>
+                        `);
+                        $.ajax({
+                            url: '/Home/GetProducts',
+                            type: 'GET',
+                            success: function (data){
+                                $("#datatable").empty();
+                                console.log("DATA CONTROLLER: ", data.length);
+                                console.log("DATA CONTROLLER: ", data);
+                                if(data.length > 0){
+                                    data.map((item, index) => {
+                                        $("#datatable").append(`
+                                            <tr>
+                                                <td>${index +1 }</td>
+                                                <td>${item.productId}</td>
+                                                <td>${item.name}</td>
+                                                <td>${item.description}</td>
+                                                <td>${item.price}</td>
+                                                <td>${item.stockQuantity}</td>
+                                                <td>${item.createdAt}</td>
+                                                <td>${item.updatedAt}</td>
+                                                <td>${item.isActive}</td>
+                                                <td>
+                                                <a href="javascript:void(0);" class="px-2" onclick="deleteProductAdmin('${item.productId}')">
+                                                    Delete
+                                                </a>
+                                                <a href="javascript:void(0);" class="px-2" onclick="updateProductAdmin('${item.productId}')">
+                                                    Edit
+                                                </a>
+                                                </td>
+                                            </tr>`
+                                        );
+                                    });
+                                }
+                            },
+                            error: function(error) {
+                                console.log(error)
+                                console.log("Lỗi khi gọi GetProduct:", error);
+                            }
+                        });
+                    }
+                    break;
                 default:
                     contentArea.innerHTML = "<h3>Danh Sách Thông tin Người Dùng</h3>";
             }
@@ -181,7 +281,7 @@
             let dateofbirth = $("#dateofbirth").val();
             let email = $("#email").val();
             let phonenumber = $("#phonenumber").val();
-            let isactive = $("#isactive").val();
+            let isactive = $("#user_isactive").val();
 
             $.ajax({
                 url:userid=="" ? '/Home/AddUserAdmin' : '/Home/UpdateUserAdmin/' + userid,
@@ -198,17 +298,20 @@
                 success: function (data) {
                     console.log(data);
                     console.log("Lay thanh cong");
-                    $("#exampleModal").modal('hide');// an mmodel da tao di
-                    resetForm();
+                    $("#userModal").modal('hide');// an mmodel da tao di
+                    console.log("an form");
+                    resetFormUser();
+                    console.log("reset form");
                     //renderTableUserAdmin(); //hàm này dùng để gọi lại
-                    //changeContent('tableuser');//goi lai tableuser
+                    changeContent('tableuser');//goi lai tableuser
+                     alert("Xoa ThanhCong");                    
                 },
                 error: function (error) {
                     console.log(error)
                 }
             });
         }
-        function resetForm() {
+        function resetFormUser() {
             //console.log("Chay resetForm")
             $("#userid").val("");
             $("#username").val("");
@@ -216,6 +319,7 @@
             $("#dateofbirth").val("");
             $("#email").val("");
             $("#phonenumber").val("");
+            $("#user_isactive").val("");
         }
 
         function deleteUserAdmin(ma_ao) {
@@ -251,11 +355,11 @@
                     $("#email").val(data.email);
                     $("#phonenumber").val(data.phoneNumber);
                     $("#updateat").val(data.updatedAt);
-                    $("#isactive").val(data.isActive);
+                    $("#user_isactive").val(data.isActive);
                     //renderTableUserController();
                     console.log(data);
                     //Hien model len
-                    $("#exampleModal").modal('show');
+                    $("#userModal").modal('show');
                 },
                 error: function (error) {
                     console.log(error);
@@ -263,5 +367,91 @@
             });
         }
 
+        // Function PRODUCT
+        function addProductAdmin() {
+            let productid = $("#productid").val();
+            console.log("productid: ", userid)
+            let name = $("#name").val();
+            let description = $("#description").val();
+            let price = $("#price").val();
+            let stockquantity = $("#stockquantity").val();
+            let isactive = $("#product_isactive").val();
+
+            $.ajax({
+                url:productid=="" ? '/Home/AddProductAdmin' : '/Home/UpdateProductAdmin/' + productid,
+                type:productid=="" ? 'POST' : 'PUT',
+                data: {
+                    Name: name,
+                    Description: description,
+                    Price: price,
+                    StockQuantity: stockquantity,
+                    IsActive: isactive
+                },
+                success: function (data) {
+                    console.log(data);
+                    console.log("Lay thanh cong");
+                    $("#productModal").modal('hide');// an mmodel da tao di
+                    resetFormProduct();
+                    //renderTableUserAdmin(); //hàm này dùng để gọi lại
+                    //changeContent('tableuser');//goi lai tableuser
+                    changeContent('tableproduct');
+                },
+                error: function (error) {
+                    console.log(error)
+                }
+            });
+        }
+        function resetFormProduct() {
+            //console.log("Chay resetForm")
+            $("#productid").val("");
+            $("#name").val("");
+            $("#description").val("");
+            $("#price").val("");
+            $("#stockquantity").val("");
+            $("#product_isactive").val("");
+        }
+
+        function deleteProductAdmin(ma_ao) {
+            console.log(ma_ao);
+            $.ajax({
+                url: '/Home/DeleteProductAdmin/' + ma_ao,
+                type: 'DELETE',
+                success: function (data){
+                    console.log("Xoa Thanh Cong");
+                    alert("Xoa ThanhCong");
+                    //renderTableUserAdmin();
+                    changeContent('tableproduct');//goi lai tableuser
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        }
+        function updateProductAdmin(ma_ao) {
+            console.log(ma_ao);
+            $.ajax({
+                url: '/Home/DetailProductAdmin/' + ma_ao,
+                type: 'GET',
+                success: function (data){
+                    console.log("Lay thong tin de update");
+                    alert("Lay thong tin de update Thanh Cong");
+
+                    $("#productid").val(data.productId);
+                    $("#name").val(data.name);
+                    $("#description").val(data.description);
+                    $("#price").val(data.price);
+                    $("#stockquantity").val(data.stockQuantity);
+                    $("#updateat").val(data.updatedAt);
+                    $("#product_isactive").val(data.isActive);
+                    //renderTableUserController();
+                    console.log(data);
+                    //Hien model len
+                    $("#productModal").modal('show');
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        }
     </script>
 }
