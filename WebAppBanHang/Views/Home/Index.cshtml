@@ -3,7 +3,8 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-@* @model WebBanHang.ViewModels.AllTableViewModel; *@
+@* @model WebAppBanHang.ViewModels.AllTablesViewModel; *@
+@model WebAppBanHang.Models.Entity.User;
 <!-- Tab Index -->
 <div class="row">
     <!-- Sidebar bên trái -->
@@ -59,26 +60,44 @@
     </div>
 </div>
 
-<!-- Form Update -->
-
-<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<!-- Form Hidden -->
+<!--Sign Up-->
+<div class="modal fade" id="signupModal" tabindex="-1" aria-labelledby="signupModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Add Product</h5>
+                <h5 class="modal-title" id="signupModalLabel">Sign Up</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="loginUserForm" action="/Home/Login" method="post">
+                <input type="text" id="userid" hidden class="form-control"> <!--id mđ ẩn đi-->
+                <form id="loginUserForm" method="post">
                     <div class="mb-3">
-                        <label for="exampleInputEmaill" class="form-label">Username</label>
-                        <input id="username" name="username" type="text" class="form-control">
+                        <label asp-for="UserName" for="username" class="form-label">Username</label>
+                        <input asp-for="UserName" id="username" type="text" class="form-control">
+                        <span asp-validation-for="UserName" class="text-danger"></span>
                     </div>
                     <div class="mb-3">
-                        <label for="exampleInputEmaill" class="form-label">Password</label>
-                        <input id="password" name="password" type="password" class="form-control">
+                        <label asp-for="Password" for="password" class="form-label">Password</label>
+                        <input asp-for="Password" id="password" type="password" class="form-control">
+                        <span asp-validation-for="Password" class="text-danger"></span>
                     </div>
-                    <button type="submit" class="btn btn-primary" onclick="addWorkController()">Xác nhận</button>
+                    <div class="mb-3">
+                        <label asp-for="ConfirmPassword" for="confirmpassword" class="form-label">ConfirmPassword</label>
+                        <input asp-for="ConfirmPassword" id="confirmpassword" type="password" class="form-control">
+                        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                    </div>
+                    @* <div class="mb-3">
+                        <label for="confirmpassword" class="form-label">ConfirmPassword</label>
+                        <input id="confirmpassword" type="password" class="form-control">
+                        <span class="text-danger">@ViewData["PasswordError"]</span>
+                    </div> *@
+                    <div class="mb-3">
+                        <label asp-for="Email" for="email" class="form-label">Email</label>
+                        <input asp-for="Email" id="email" type="email" class="form-control">
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="signUpUser()">Xác nhận</button>
                 </form>
             </div>
         </div>
@@ -89,6 +108,9 @@
 
 <!--Code-->
 @section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
     <script>
         function changeContent(content) { //Selection-Buttons
             console.log("Change content to: ", content);
@@ -493,6 +515,55 @@
                 default:
                     contentArea.innerHTML = "<h3>Danh Sách Thông tin Người Dùng</h3>";
             }
+        }
+
+        // Function Sign up
+        function signUpUser() {
+            let userid = $("#userid").val();
+            console.log("userid: ", userid)
+            let username = $("#username").val();
+            let password = $("#password").val();
+            let confirmpassword = $("#confirmpassword").val();
+            let email = $("#email").val();
+
+            $.ajax({
+                url:'/Home/Signup',
+                type:'POST',
+                data: {
+                    UserName: username,
+                    Password: password,
+                    Confirmpassword: confirmpassword,
+                    Email: email
+                },
+                success: function (data) {
+                    //console.log(data);
+                    console.log("Sign up success");
+                    // Kiểm tra nếu có lỗi mật khẩu từ ViewData
+                    // console.log("Sign up success:",$(data).find("#PasswordError").length);
+                    // if ($(data).find("#PasswordError").length > 0) {
+                    //     Hiển thị lại modal với thông báo lỗi
+                    //     $(".modal-body").html($(data).find(".modal-body").html());
+                    //     $("#signupModal").modal('show');
+                    // } else {
+                    //     console.log("Đăng ký thành công");
+                    //     $("#signupModal").modal('hide');
+                    //     resetSignUp();
+                    // }
+                    $("#signupModal").modal('hide');
+                    resetSignUp();
+                },
+                error: function (error) {
+                    console.log(error)
+                }
+            });
+        }
+        function resetSignUp() {
+            //console.log("Chay resetForm")
+            $("#userid").val("");
+            $("#username").val("");
+            $("#password").val("");
+            $("#confirmpassword").val("");
+            $("#email").val("");
         }
     </script>
 }

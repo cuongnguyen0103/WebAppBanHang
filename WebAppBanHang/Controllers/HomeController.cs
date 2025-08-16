@@ -16,8 +16,8 @@ namespace WebAppBanHang.Controllers
             _logger = logger;
             _context = context;
         }
-
         //VIEW INDEX
+        #region VIEW INDEX
         public IActionResult Index()
         {
             //lay session nhan tu Login
@@ -34,6 +34,7 @@ namespace WebAppBanHang.Controllers
 
             return Ok(products);
         }
+        #endregion
 
         #region LOGIN/LOGOUT/USERINFO
         //LOGIN
@@ -56,6 +57,7 @@ namespace WebAppBanHang.Controllers
             }
             // lay session
             HttpContext.Session.SetString("UserName", user.UserName);
+            HttpContext.Session.SetString("Role", user.Role);
             //return View("Index");
             return RedirectToAction("Index", "Home");
         }
@@ -68,49 +70,81 @@ namespace WebAppBanHang.Controllers
             // tra ve trang Login
             return RedirectToAction("Index", "Home");
         }
+        // Sign Up
+        [HttpPost]
+        public async Task<IActionResult> Signup(User input)
+        {
+            //string confirmPassword = Request.Form["confirmpassword"];
+            // Data Validation
+            if (!ModelState.IsValid)
+            {
+                return View(input);
+            }            
+            // get data from input
+            User user = new User();
+            user.UserName = input.UserName;
+            user.Password = input.Password;
+            user.ConfirmPassword = input.ConfirmPassword;
+            user.Role = string.IsNullOrWhiteSpace(input.Role) ? "customer" : input.Role;
+            user.Email = input.Email;
+            user.IsActive = input.IsActive ? input.IsActive : true;
+
+            _context.Users.Add(user);  
+            await _context.SaveChangesAsync();
+            return View("Index");
+        }
 
         // User information
-       
+
         public IActionResult UserInfo()
         {
             //lay session nhan tu Login
-            var userName = HttpContext.Session.GetString("UserName");
-            ViewBag.UserName = userName; //thong bao cho View
+            var role = HttpContext.Session.GetString("Role");
+            ViewBag.Role = role; //thong bao cho View
             //lay userId tu session
-            var userId = HttpContext.Session.GetInt32("UserId");
-            if (userId == null)
-            {
-                return RedirectToAction("Login");
-            }            
-            var user = _context.Users.Find(userName);
-            if (user == null)
-            {
-                return NotFound("Ko thay thong tin nguoi dung");
-            }
-            else if (user.UserName == "admin")
+            //var userId = HttpContext.Session.GetInt32("UserId");
+            //if (userId == null)
+            //{
+            //    return RedirectToAction("Login");
+            //}            
+            //var user = _context.Users.Find(userName);
+            //if (user == null)
+            //{
+            //    return NotFound("Ko thay thong tin nguoi dung");
+            //}
+            if (role == "admin")
             {
                 return RedirectToAction("AdminView");
             }
-            else if (user.UserName != "admin")
+            else
             {
-                return RedirectToAction("Customer");
+                return RedirectToAction("CustomerView");
             }
             //return View(user);
         }
         #endregion
+
+        //VIEW CUSTOMER
         #region VIEW CUSTOMER
-        public IActionResult Customer()
+        public IActionResult CustomerView()
         {
-            return View();
+            var products = _context.Users.ToList();
+            if (products == null)
+            {
+                return NotFound("Product not found.");
+            }
+            return View(products);
         }
-
+        #endregion  VIEW CUSTOMER
+        
         //VIEW Admin
-
+        #region VIEW Admin
         public IActionResult AdminView()
         {            
             return View();
         }
-
+        //Table User
+        #region Table User
         //GET USER Admin
         public IActionResult GetUser()
         {
@@ -125,9 +159,17 @@ namespace WebAppBanHang.Controllers
         [HttpPost]
         public async Task<IActionResult> AddUserAdmin(User input)
         {
+            //data annotation
+            //Data Validation
+            if (input==null || !ModelState.IsValid)
+            {
+                // Returns a View with data errors to display information
+                return View(input);
+            }
             User user = new User();
             user.UserName = input.UserName;
             user.Password = input.Password;
+            user.Role = string.IsNullOrWhiteSpace(input.Role) ? "customer" : input.Role;
             user.FullName = input.FullName;
             user.DateOfBirth = input.DateOfBirth;
             user.Email = input.Email;
@@ -180,6 +222,8 @@ namespace WebAppBanHang.Controllers
         public async Task<IActionResult> UpdateUserAdmin(int id, User input)
         {
             //Data Validation 
+            // Remove ConfirmPassword from ModelState to avoid validation errors
+            ModelState.Remove(nameof(input.ConfirmPassword));
             if (!ModelState.IsValid)
             {
                 // Returns a View with data errors to display information
@@ -195,6 +239,7 @@ namespace WebAppBanHang.Controllers
                 update.UserName = input.UserName;
                 update.Password = input.Password;
                 update.FullName = input.FullName;
+                update.Role = input.Role;
                 update.DateOfBirth = input.DateOfBirth;
                 update.Email = input.Email;
                 update.PhoneNumber = input.PhoneNumber;
@@ -205,9 +250,10 @@ namespace WebAppBanHang.Controllers
             }
             return Ok();
         }
+        #endregion Table User
 
-
-        // PRODUCTS
+        // Table Product
+        #region Table Product        
         //GET products
         public IActionResult GetProducts()
         {
@@ -299,8 +345,34 @@ namespace WebAppBanHang.Controllers
             }
             return Ok();
         }
+        #endregion Table Product
 
+        // Table Order
+        #region Table Order
+        //GET orders
+        public IActionResult GetOrders()
+        {
+            var orders = _context.Orders.ToList();
 
+            if (orders == null)
+            {
+                return NotFound("Order not found.");
+            }
+            return Ok(orders);
+        }
+
+        #endregion Table Order
+
+        #endregion VIEW Admin
+
+        //shopping cart
+        public IActionResult ShoppingCart()
+        {
+            //lay session nhan tu Login
+            var userName = HttpContext.Session.GetString("UserName");
+            ViewBag.UserName = userName;
+            return View();
+        }
 
 
 

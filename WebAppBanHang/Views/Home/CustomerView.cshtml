@@ -2,4 +2,46 @@
     ViewData["Title"] = "Customer";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
-@model WebAppBanHang.ViewModels.AllTablesViewModel
+@* @model WebAppBanHang.ViewModels.AllTablesViewModel; *@
+@model List<WebAppBanHang.Models.Entity.User>
+<div>
+    <h2>Customer</h2>
+    <h1>Count User: @Model.Count</h1>
+    <div class="row">
+        <div class="col-md-12">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>UserId</th>
+                        <th>UserName</th>
+                        <th>FullName</th>
+                        <th>Role</th>
+                        <th>Email</th>
+                        <th>PhoneNumber</th>
+                        <th>DateOfBirth</th>
+                        <th>CreatedAt</th>
+                        <th>UpdatedAt</th>
+                        <th>IsActive</th>
+                    </tr>
+                </thead>
+                <tbody id="datatable">
+                    @foreach (var user in Model)
+                    {
+                        <tr>
+                            <td>@user.UserId</td>
+                            <td>@user.UserName</td>
+                            <td>@user.FullName</td>
+                            <td>@user.Role</td>
+                            <td>@user.Email</td>
+                            <td>@user.PhoneNumber</td>
+                            <td>@user.DateOfBirth</td>
+                            <td>@user.CreatedAt</td>
+                            <td>@user.UpdatedAt</td>
+                            <td>@(user.IsActive ? "Active" : "Inactive")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

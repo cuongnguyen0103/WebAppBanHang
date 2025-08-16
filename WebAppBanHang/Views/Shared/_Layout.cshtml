@@ -34,13 +34,14 @@
                         @if (Context.Session.GetString("UserName") != null)
                         {
                             <span class="nav-link">Xin chào, @Context.Session.GetString("UserName")</span>
-                            <a class="nav-link" asp-controller="Home" asp-action="UserInfo">Login</a>
-                            <a class="nav-link" asp-controller="Home" asp-action="Logout">Đăng xuất</a>
+                            @* <a class="nav-link" asp-controller="Home" asp-action="UserInfo">Log in</a> *@
+                            <a class="nav-link" asp-controller="Home" asp-action="Logout">Log out</a>
                             <a class="nav-link" asp-controller="Home" asp-action="UserInfo">UserInfo</a>
                         }
                         else
                         {
                             <a class="nav-link" asp-controller="Home" asp-action="Login">Login</a>
+                            <a class="nav-link" asp-controller="Home" asp-action="" data-bs-toggle="modal" data-bs-target="#signupModal">Sign up</a>
                         }
                     </ul>
                 </div>

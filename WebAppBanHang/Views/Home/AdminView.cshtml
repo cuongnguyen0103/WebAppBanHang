@@ -15,7 +15,9 @@
         <ul class="list-group">
             <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('tableuser')"> Table User </a> </li>
             <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('tableproduct')"> Table Product </a></li>
-            <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('allproduct')"> All Products </a></li>            
+            <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('tableorder')"> Tab Order </a></li>    
+            <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('tableorderdetail')"> Tab OrderDetail </a></li>
+            <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('tablediscount')"> Tab Discount </a></li>
         </ul>
     </div>
 
@@ -75,12 +77,16 @@
                         <input id="password" name="password" type="password" class="form-control">
                     </div>
                     <div class="mb-3">
+                        <label for="role" class="form-label">Role</label>
+                        <input id="role" name="role" type="text" class="form-control">
+                    </div>
+                    <div class="mb-3">
                         <label for="fullname" class="form-label">FullName</label>
                         <input id="fullname" name="fullname" type="text" class="form-control">
                     </div>
                     <div class="mb-3">
                         <label for="dateofbirth" class="form-label">Date Of Birth</label>
-                        <input id="dateofbirth" name="dateofbirth" type="datetime" class="form-control">
+                        <input id="dateofbirth" name="dateofbirth" type="date" class="form-control">
                     </div>
                     <div class="mb-3">
                         <label for="email" class="form-label">Email</label>
@@ -125,7 +131,7 @@
                         <input id="price" name="price" type="number" class="form-control">
                     </div>
                     <div class="mb-3">
-                        <label for="stockquantity" class="form-label">StockQuantity</label>
+                        <label for="stockquantity" class="form-label">StockQuantity(Can't be negative)</label>
                         <input id="stockquantity" name="stockquantity" type="number" class="form-control">
                     </div>                    
                     <div class="mb-3">
@@ -156,6 +162,7 @@
                                 <th scope="col">Number</th>
                                 <th scope="col">UserName</th>
                                 <th scope="col">Password</th>
+                                <th scope="col">Role</th>
                                 <th scope="col">FullName</th>
                                 <th scope="col">DateOfBirth</th>
                                 <th scope="col">Email</th>
@@ -180,6 +187,7 @@
                                                 <td>${index +1 }</td>
                                                 <td>${item.userName}</td>
                                                 <td>${item.password}</td>
+                                                <td>${item.role}</td>
                                                 <td>${item.fullName}</td>
                                                 <td>${item.dateOfBirth}</td>
                                                 <td>${item.email}</td>
@@ -267,6 +275,180 @@
                         });
                     }
                     break;
+                case 'tableorder':
+                    // contentArea.innerHTML = '<h3>New Products</h3><p>Here are the latest products.</p>';
+                    $(document).ready(function() {
+                        renderTableOrderAdmin();
+                    });
+                    function renderTableOrderAdmin(){
+                        $("#tableHead").html(`
+                            <tr>
+                                <th scope="col">Number</th>
+                                <th scope="col">OrderId</th>
+                                <th scope="col">UserId</th>
+                                <th scope="col">OrderDate</th>
+                                <th scope="col">CreatedAt</th>
+                                <th scope="col">IsActive</th>
+                                //<th scope="col">Even</th>
+                            </tr>
+                        `);
+                        $.ajax({
+                            url: '/Home/GetOrders',
+                            type: 'GET',
+                            success: function (data){
+                                $("#datatable").empty();
+                                console.log("DATA CONTROLLER: ", data.length);
+                                console.log("DATA CONTROLLER: ", data);
+                                if(data.length > 0){
+                                    data.map((item, index) => {
+                                        $("#datatable").append(`
+                                            <tr>
+                                                <td>${index +1 }</td>
+                                                <td>${item.orderId}</td>
+                                                <td>${item.userId}</td>
+                                                <td>${item.orderDate}</td>
+                                                <td>${item.createdAt}</td>
+                                                <td>${item.isActive}</td>
+                                                // <td>
+                                                // <a href="javascript:void(0);" class="px-2" onclick="deleteProductAdmin('${item.productId}')">
+                                                //     Delete
+                                                // </a>
+                                                // <a href="javascript:void(0);" class="px-2" onclick="updateProductAdmin('${item.productId}')">
+                                                //     Edit
+                                                // </a>
+                                                // </td>
+                                            </tr>`
+                                        );
+                                    });
+                                }
+                            },
+                            error: function(error) {
+                                console.log(error)
+                                console.log("Lỗi khi gọi Order:", error);
+                            }
+                        });
+                    }
+                    break;
+                case 'tableorderdetail':
+                    // contentArea.innerHTML = '<h3>New Products</h3><p>Here are the latest products.</p>';
+                    $(document).ready(function() {
+                        renderTableProductAdmin();
+                    });
+                    function renderTableProductAdmin(){
+                        $("#tableHead").html(`
+                            <tr>
+                                <th scope="col">Number</th>
+                                <th scope="col">ProductId</th>
+                                <th scope="col">Name</th>
+                                <th scope="col">Description</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">StockQuantity</th>
+                                <th scope="col">CreatedAt</th>
+                                <th scope="col">UpdatedAt</th>
+                                <th scope="col">IsActive</th>
+                                <th scope="col">Even</th>
+                            </tr>
+                        `);
+                        $.ajax({
+                            url: '/Home/GetProducts',
+                            type: 'GET',
+                            success: function (data){
+                                $("#datatable").empty();
+                                console.log("DATA CONTROLLER: ", data.length);
+                                console.log("DATA CONTROLLER: ", data);
+                                if(data.length > 0){
+                                    data.map((item, index) => {
+                                        $("#datatable").append(`
+                                            <tr>
+                                                <td>${index +1 }</td>
+                                                <td>${item.productId}</td>
+                                                <td>${item.name}</td>
+                                                <td>${item.description}</td>
+                                                <td>${item.price}</td>
+                                                <td>${item.stockQuantity}</td>
+                                                <td>${item.createdAt}</td>
+                                                <td>${item.updatedAt}</td>
+                                                <td>${item.isActive}</td>
+                                                <td>
+                                                <a href="javascript:void(0);" class="px-2" onclick="deleteProductAdmin('${item.productId}')">
+                                                    Delete
+                                                </a>
+                                                <a href="javascript:void(0);" class="px-2" onclick="updateProductAdmin('${item.productId}')">
+                                                    Edit
+                                                </a>
+                                                </td>
+                                            </tr>`
+                                        );
+                                    });
+                                }
+                            },
+                            error: function(error) {
+                                console.log(error)
+                                console.log("Lỗi khi gọi GetProduct:", error);
+                            }
+                        });
+                    }
+                    break;
+                case 'tablediscount':
+                    // contentArea.innerHTML = '<h3>New Products</h3><p>Here are the latest products.</p>';
+                    $(document).ready(function() {
+                        renderTableProductAdmin();
+                    });
+                    function renderTableProductAdmin(){
+                        $("#tableHead").html(`
+                            <tr>
+                                <th scope="col">Number</th>
+                                <th scope="col">ProductId</th>
+                                <th scope="col">Name</th>
+                                <th scope="col">Description</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">StockQuantity</th>
+                                <th scope="col">CreatedAt</th>
+                                <th scope="col">UpdatedAt</th>
+                                <th scope="col">IsActive</th>
+                                <th scope="col">Even</th>
+                            </tr>
+                        `);
+                        $.ajax({
+                            url: '/Home/GetProducts',
+                            type: 'GET',
+                            success: function (data){
+                                $("#datatable").empty();
+                                console.log("DATA CONTROLLER: ", data.length);
+                                console.log("DATA CONTROLLER: ", data);
+                                if(data.length > 0){
+                                    data.map((item, index) => {
+                                        $("#datatable").append(`
+                                            <tr>
+                                                <td>${index +1 }</td>
+                                                <td>${item.productId}</td>
+                                                <td>${item.name}</td>
+                                                <td>${item.description}</td>
+                                                <td>${item.price}</td>
+                                                <td>${item.stockQuantity}</td>
+                                                <td>${item.createdAt}</td>
+                                                <td>${item.updatedAt}</td>
+                                                <td>${item.isActive}</td>
+                                                <td>
+                                                <a href="javascript:void(0);" class="px-2" onclick="deleteProductAdmin('${item.productId}')">
+                                                    Delete
+                                                </a>
+                                                <a href="javascript:void(0);" class="px-2" onclick="updateProductAdmin('${item.productId}')">
+                                                    Edit
+                                                </a>
+                                                </td>
+                                            </tr>`
+                                        );
+                                    });
+                                }
+                            },
+                            error: function(error) {
+                                console.log(error)
+                                console.log("Lỗi khi gọi GetProduct:", error);
+                            }
+                        });
+                    }
+                    break;
                 default:
                     contentArea.innerHTML = "<h3>Danh Sách Thông tin Người Dùng</h3>";
             }
@@ -277,6 +459,7 @@
             console.log("UserID: ", userid)
             let username = $("#username").val();
             let password = $("#password").val();
+            let role = $("#role").val();
             let fullname = $("#fullname").val();
             let dateofbirth = $("#dateofbirth").val();
             let email = $("#email").val();
@@ -289,7 +472,8 @@
                 data: {
                     UserName: username,
                     Password: password,
-                    fullName: fullname,
+                    Role: role,
+                    FullName: fullname,
                     DateOfBirth: dateofbirth,
                     Email: email,
                     PhoneNumber: phonenumber,
@@ -304,7 +488,7 @@
                     console.log("reset form");
                     //renderTableUserAdmin(); //hàm này dùng để gọi lại
                     changeContent('tableuser');//goi lai tableuser
-                     alert("Xoa ThanhCong");                    
+                     alert("Them ThanhCong");                    
                 },
                 error: function (error) {
                     console.log(error)
@@ -316,6 +500,8 @@
             $("#userid").val("");
             $("#username").val("");
             $("#password").val("");
+            $("#role").val("");
+            $("#fullname").val("");
             $("#dateofbirth").val("");
             $("#email").val("");
             $("#phonenumber").val("");
@@ -350,6 +536,7 @@
                     $("#userid").val(data.userId);
                     $("#username").val(data.userName);
                     $("#password").val(data.password);
+                    $("#role").val(data.role);
                     $("#fullname").val(data.fullName);
                     $("#dateofbirth").val(data.dateOfBirth);
                     $("#email").val(data.email);
@@ -360,6 +547,19 @@
                     console.log(data);
                     //Hien model len
                     $("#userModal").modal('show');
+                    //khoa field username
+                    //$("#username").prop("readonly", true);//$("#username").prop("disabled", true);
+                    if (data.role === "admin") {
+                        $("#username").prop("readonly", false); // Mở khóa
+                    } else {
+                        $("#username").prop("readonly", true);  // Khóa lại
+                    }
+                    //khoa field fullname
+                    if (data.role === "admin") {
+                        $("#fullname").prop("readonly", false); // Mở khóa
+                    } else {
+                        $("#fullname").prop("readonly", true);  // Khóa lại
+                    }
                 },
                 error: function (error) {
                     console.log(error);
@@ -370,7 +570,7 @@
         // Function PRODUCT
         function addProductAdmin() {
             let productid = $("#productid").val();
-            console.log("productid: ", userid)
+            console.log("productid: ", productid)
             let name = $("#name").val();
             let description = $("#description").val();
             let price = $("#price").val();
