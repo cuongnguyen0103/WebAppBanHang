@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using WebAppBanHang.Models;
 using WebAppBanHang.Models.Entity;
+using WebAppBanHang.ViewModels;
+
 
 namespace WebAppBanHang.Controllers
 {
@@ -28,12 +30,31 @@ namespace WebAppBanHang.Controllers
         }
 
         // NEW PRODUCT
+        #region NEW PRODUCT
+        // GET NEW PRODUCT
         public IActionResult NewProduct()
         {
-            var products = _context.Products.ToList();
-
+            var products = _context.Products
+                                .Include(p => p.ProductDiscounts)
+                                .ThenInclude(pd => pd.Discount)
+                                .Select(p => new
+                                {
+                                p.ProductId,
+                                p.Name,
+                                p.Description,
+                                p.Price,
+                                p.StockQuantity,
+                                DiscountPercent = p.ProductDiscounts
+                                    .Where(pd => pd.IsActive && pd.Discount.IsActive &&
+                                                pd.Discount.StartDate <= DateTime.Now &&
+                                                pd.Discount.EndDate >= DateTime.Now)
+                                    .Select(pd => pd.Discount.DiscountPercent)
+                                .FirstOrDefault() // lấy giảm giá đầu tiên nếu có, mặc định là 0
+                                })
+                                .ToList();
             return Ok(products);
         }
+        #endregion NEW PRODUCT
         #endregion
 
         #region LOGIN/LOGOUT/USERINFO
@@ -91,6 +112,11 @@ namespace WebAppBanHang.Controllers
 
             _context.Users.Add(user);  
             await _context.SaveChangesAsync();
+            // lay session
+            //HttpContext.Session.SetString("UserName", user.UserName);
+            //HttpContext.Session.SetString("Role", user.Role);
+            //return View("Index");
+            //return RedirectToAction("Index", "Home");
             return View("Index");
         }
 
@@ -140,8 +166,19 @@ namespace WebAppBanHang.Controllers
         //VIEW Admin
         #region VIEW Admin
         public IActionResult AdminView()
-        {            
-            return View();
+        {
+            var model = new AllTablesViewModel
+            {
+                Products = _context.Products.ToList(),
+                Users = _context.Users.ToList(),
+                Orders = _context.Orders.ToList(),
+                OrderDetails = _context.OrderDetails.ToList(),
+                Discounts = _context.Discounts.ToList(),
+                ProductDiscounts = _context.ProductDiscounts.ToList()
+            };
+
+            return View(model);
+            //return View();
         }
         //Table User
         #region Table User
@@ -159,8 +196,9 @@ namespace WebAppBanHang.Controllers
         [HttpPost]
         public async Task<IActionResult> AddUserAdmin(User input)
         {
-            //data annotation
             //Data Validation
+            ModelState.Remove(nameof(input.ConfirmPassword));
+            ModelState.Remove(nameof(input.IsActive));
             if (input==null || !ModelState.IsValid)
             {
                 // Returns a View with data errors to display information
@@ -176,7 +214,7 @@ namespace WebAppBanHang.Controllers
             user.PhoneNumber = input.PhoneNumber;
             user.CreatedAt = DateTime.Now;
             user.UpdatedAt = DateTime.Now;
-            user.IsActive = input.IsActive;
+            user.IsActive = input.IsActive ? input.IsActive : true;
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
@@ -239,16 +277,16 @@ namespace WebAppBanHang.Controllers
                 update.UserName = input.UserName;
                 update.Password = input.Password;
                 update.FullName = input.FullName;
-                update.Role = input.Role;
+                update.Role = string.IsNullOrWhiteSpace(input.Role) ? "customer" : input.Role;
                 update.DateOfBirth = input.DateOfBirth;
                 update.Email = input.Email;
                 update.PhoneNumber = input.PhoneNumber;
                 update.UpdatedAt = DateTime.Now;
-                update.IsActive = input.IsActive;
+                update.IsActive = input.IsActive ? input.IsActive : true;
 
                 await _context.SaveChangesAsync();
-            }
-            return Ok();
+                return Ok();
+            }            
         }
         #endregion Table User
 
@@ -269,6 +307,12 @@ namespace WebAppBanHang.Controllers
         [HttpPost]
         public async Task<IActionResult> AddProductAdmin(Product input)
         {
+            //data Validation
+            if (input == null || !ModelState.IsValid)
+            {
+                // Returns a View with data errors to display information
+                return Ok();
+            }
             Product product = new Product();
             product.Name = input.Name;
             product.Description = input.Description;
@@ -276,7 +320,7 @@ namespace WebAppBanHang.Controllers
             product.StockQuantity = input.StockQuantity;
             product.CreatedAt = DateTime.Now;
             product.UpdatedAt = DateTime.Now;
-            product.IsActive = input.IsActive;
+            product.IsActive = input.IsActive ? input.IsActive : true;
 
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
@@ -339,11 +383,11 @@ namespace WebAppBanHang.Controllers
                 update.Price = input.Price;
                 update.StockQuantity = input.StockQuantity;
                 update.UpdatedAt = DateTime.Now;
-                update.IsActive = input.IsActive;
+                update.IsActive = input.IsActive ? input.IsActive : true;
 
                 await _context.SaveChangesAsync();
+                return Ok();
             }
-            return Ok();
         }
         #endregion Table Product
 
@@ -363,6 +407,130 @@ namespace WebAppBanHang.Controllers
 
         #endregion Table Order
 
+        // Table Discount
+        #region Table Discount
+        //GET discounts
+        public IActionResult GetDiscounts()
+        {
+            var discounts = _context.Discounts.ToList();
+            if (discounts == null)
+            {
+                return NotFound("Discount not found.");
+            }
+            return Ok(discounts);
+        }
+
+        // POST Discount Admin
+        [HttpPost]
+        public async Task<IActionResult> AddDiscountAdmin(Discount input)
+        {
+            if (input == null || !ModelState.IsValid)
+            {
+                // Returns a View with data errors to display information
+                return Ok();
+            }
+            Discount discount = new Discount();
+            discount.Code = input.Code;
+            discount.DiscountDescription = input.DiscountDescription;
+            discount.DiscountPercent = input.DiscountPercent;
+            discount.StartDate = input.StartDate;
+            discount.EndDate = input.EndDate;
+            discount.CreatedAt = DateTime.Now;
+            discount.UpdatedAt = DateTime.Now;
+            discount.IsActive = input.IsActive ? input.IsActive : true;
+            _context.Discounts.Add(discount);
+            await _context.SaveChangesAsync();
+            return RedirectToAction();
+        }
+        // Delete Discount Admin
+        [HttpDelete("/Home/DeleteDiscountAdmin/{id}")]
+        public async Task<IActionResult> DeleteDiscountAdmin(int id)
+        {
+            var discount = _context.Discounts.Find(id);
+            if (discount == null)
+            {
+                return NotFound("Discount not found.");
+            }
+            _context.Discounts.Remove(discount);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+        // GET id to UpdateDiscount
+        [HttpGet("/Home/DetailDiscountAdmin/{id}")]
+        public async Task<IActionResult> DetailDiscountAdmin(int id)
+        {
+            //lay du lieu sql
+            var item = _context.Discounts.FirstOrDefault(x => x.DiscountId == id);
+            if (item == null) return NotFound();
+            return Ok(item);
+        }
+        // PUT Discount Id
+        [HttpPut("/Home/UpdateDiscountAdmin/{id}")]
+        public async Task<IActionResult> UpdateDiscountAdmin(int id, Discount input)
+        {
+            //Data Validation 
+            if (!ModelState.IsValid)
+            {
+                // Returns a View with data errors to display information
+                return View(input);
+            }
+            var update = _context.Discounts.Find(id);
+            if (update == null)
+            {
+                return NotFound();
+            }
+            else
+            {
+                update.Code = input.Code;
+                update.DiscountDescription = input.DiscountDescription;
+                update.DiscountPercent = input.DiscountPercent;
+                update.StartDate = input.StartDate;
+                update.EndDate = input.EndDate;
+                update.UpdatedAt = DateTime.Now;
+                update.IsActive = input.IsActive ? input.IsActive : true;
+                await _context.SaveChangesAsync();
+                return Ok();
+            }
+        }
+        #endregion Table Discount
+
+        // table ProductDiscount
+        #region Table ProductDiscount
+        //GET ProductDiscounts
+        public IActionResult GetProductDiscounts()
+        {
+            var productDiscounts = _context.ProductDiscounts.ToList();
+            if (productDiscounts == null)
+            {
+                return NotFound("ProductDiscount not found.");
+            }
+            return Ok(productDiscounts);
+        }
+
+        // POST ProductDiscount Admin
+        [HttpPost]
+        public async Task<IActionResult> AddProductDiscountAdmin(ProductDiscount input)
+        {
+            //Data Validation
+            ModelState.Remove(nameof(input.Product)); // bo bien quan he voi Product
+            ModelState.Remove(nameof(input.Discount));// bo bien quan he voi Discount
+            if (input == null || !ModelState.IsValid)
+            {
+                // Returns a View with data errors to display information
+                return Ok();
+            }
+            ProductDiscount productDiscount = new ProductDiscount();
+            productDiscount.ProductId = input.ProductId;
+            productDiscount.DiscountId = input.DiscountId;
+            productDiscount.CreatedAt = DateTime.Now;
+            productDiscount.IsActive = input.IsActive ? input.IsActive : true;
+
+            _context.ProductDiscounts.Add(productDiscount);
+            await _context.SaveChangesAsync();
+            return RedirectToAction();
+        }
+      
+        #endregion Table ProductDiscount
         #endregion VIEW Admin
 
         //shopping cart

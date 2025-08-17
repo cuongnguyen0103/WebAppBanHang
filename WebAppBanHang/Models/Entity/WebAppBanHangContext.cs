@@ -17,7 +17,7 @@ namespace WebAppBanHang.Models.Entity
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderDetail> OrderDetails { get; set; }
         public DbSet<Discount> Discounts { get; set; }
-
+        public DbSet<ProductDiscount> ProductDiscounts { get; set; }
 
         //xoa user thi xoa order và orderdetail, xoa order thi xoa orderdetail
         protected override void OnModelCreating(ModelBuilder modelBuilder)

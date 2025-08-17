@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebAppBanHang.Models.Entity;
 
@@ -11,9 +12,11 @@ using WebAppBanHang.Models.Entity;
 namespace WebAppBanHang.Migrations
 {
     [DbContext(typeof(WebAppBanHangContext))]
-    partial class WebAppBanHangContextModelSnapshot : ModelSnapshot
+    [Migration("20250817085655_Init8")]
+    partial class Init8
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -178,35 +181,6 @@ namespace WebAppBanHang.Migrations
                     b.ToTable("Products");
                 });
 
-            modelBuilder.Entity("WebAppBanHang.Models.Entity.ProductDiscount", b =>
-                {
-                    b.Property<int>("ProductDiscountId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductDiscountId"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("DiscountId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.HasKey("ProductDiscountId");
-
-                    b.HasIndex("DiscountId");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("ProductDiscounts");
-                });
-
             modelBuilder.Entity("WebAppBanHang.Models.Entity.User", b =>
                 {
                     b.Property<int>("UserId")
@@ -299,30 +273,9 @@ namespace WebAppBanHang.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("WebAppBanHang.Models.Entity.ProductDiscount", b =>
-                {
-                    b.HasOne("WebAppBanHang.Models.Entity.Discount", "Discount")
-                        .WithMany("ProductDiscounts")
-                        .HasForeignKey("DiscountId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("WebAppBanHang.Models.Entity.Product", "Product")
-                        .WithMany("ProductDiscounts")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Discount");
-
-                    b.Navigation("Product");
-                });
-
             modelBuilder.Entity("WebAppBanHang.Models.Entity.Discount", b =>
                 {
                     b.Navigation("OrderDetails");
-
-                    b.Navigation("ProductDiscounts");
                 });
 
             modelBuilder.Entity("WebAppBanHang.Models.Entity.Order", b =>
@@ -333,8 +286,6 @@ namespace WebAppBanHang.Migrations
             modelBuilder.Entity("WebAppBanHang.Models.Entity.Product", b =>
                 {
                     b.Navigation("OrderDetails");
-
-                    b.Navigation("ProductDiscounts");
                 });
 
             modelBuilder.Entity("WebAppBanHang.Models.Entity.User", b =>

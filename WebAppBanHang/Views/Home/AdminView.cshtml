@@ -18,6 +18,7 @@
             <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('tableorder')"> Tab Order </a></li>    
             <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('tableorderdetail')"> Tab OrderDetail </a></li>
             <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('tablediscount')"> Tab Discount </a></li>
+            <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('tableproductdiscount')"> Tab ProductDiscount </a></li>
         </ul>
     </div>
 
@@ -30,6 +31,7 @@
         <div class="flex justify-content-between py-2">
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal">Add User</button>
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#productModal">Add Product</button>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#discountModal">Add Discount</button>
         </div>
         <!-- Nội dung riêng của Điện thoại -->
         <div class="flex justify-content-between py-2">
@@ -144,7 +146,90 @@
         </div>
     </div>
 </div>
+<!--DISCOUNT FOR PRODUCT-->
+<div class="modal fade" id="discountproductModal" tabindex="-1" aria-labelledby="discountproductModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="discountproductModalLabel">Add Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="discount_productid" hidden class="form-control"> <!--id mđ ẩn đi-->
+                <form id="DiscountProductForm" method="post">
+                    <div class="mb-3">
+                        <label for="discount_name" class="form-label">Name</label>
+                        <input id="discount_name" name="discount_name" type="text" class="form-control">
+                    </div>     
+                    @* <div class="mb-3">
+                        <label for="discountproduct" class="form-label">Discount</label>
+                        <input id="discountproduct" name="discountproduct" type="number" class="form-control">
+                    </div> *@
+                    <div class="mb-3">
+                        <label for="discountproduct" class="form-label">Discount</label>
+                        <select id="discountproduct" name="discountproduct" class="form-select">
+                            <option value="">-- Chọn mức giảm giá --</option>
+                            @if (Model.Discounts != null)
+                            {
+                                foreach (var discount in Model.Discounts)
+                                {
+                                    <option value="@discount.DiscountId">@discount.Code: @discount.DiscountPercent%</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="discountproduct_isactive" class="form-label">isActive</label>
+                        <input id="discountproduct_isactive" name="discountproduct_isactive" type="text" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-primary" onclick="updateDiscount()">Xác nhận</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!--DISCOUNT-->
+<div class="modal fade" id="discountModal" tabindex="-1" aria-labelledby="discountModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="discountModalLabel">Add Discount</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="discountid" hidden class="form-control"> <!--id mđ ẩn đi-->
+                <form id="discountForm" method="post">
+                    <div class="mb-3">
+                        <label for="code" class="form-label">Code</label>
+                        <input id="code" name="code" type="text" class="form-control">
+                    </div>    
+                    <div class="mb-3">
+                        <label for="discount_description" class="form-label">Description</label>
+                        <input id="discount_description" name="discount_description" type="text" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="discountpercent" class="form-label">DiscountPercent</label>
+                        <input id="discountpercent" name="discountpercent" type="number" class="form-control" placeholder="Nhập 10 -> 10%">
+                    </div>
+                    <div class="mb-3">
+                        <label for="startdate" class="form-label">Start Date</label>
+                        <input id="startdate" name="startdate" type="date" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="enddate" class="form-label">End Date</label>
+                        <input id="enddate" name="enddate" type="date" class="form-control">
+                    </div>                    
+                    <div class="mb-3">
+                        <label for="discount_isactive" class="form-label">isActive</label>
+                        <input id="discount_isactive" name="discount_isactive" type="text" class="form-control">
+                    </div>
 
+                    <button type="submit" class="btn btn-primary" onclick="addDiscountAdmin()">Xác nhận</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 @section Scripts {
     <script>
         function changeContent(content) { //Selection-Buttons
@@ -263,6 +348,14 @@
                                                     Edit
                                                 </a>
                                                 </td>
+                                                <td>
+                                                <a href="javascript:void(0);" class="px-2" onclick="addDiscount('${item.productId}')">
+                                                    Add Discount
+                                                </a>
+                                                <a href="javascript:void(0);" class="px-2" onclick="updatedDiscount('${item.productId}')">
+                                                    Update Discount
+                                                </a>
+                                                </td>
                                             </tr>`
                                         );
                                     });
@@ -332,9 +425,9 @@
                 case 'tableorderdetail':
                     // contentArea.innerHTML = '<h3>New Products</h3><p>Here are the latest products.</p>';
                     $(document).ready(function() {
-                        renderTableProductAdmin();
+                        renderTableOrderDetailAdmin();
                     });
-                    function renderTableProductAdmin(){
+                    function renderTableOrderDetailAdmin(){
                         $("#tableHead").html(`
                             <tr>
                                 <th scope="col">Number</th>
@@ -392,17 +485,18 @@
                 case 'tablediscount':
                     // contentArea.innerHTML = '<h3>New Products</h3><p>Here are the latest products.</p>';
                     $(document).ready(function() {
-                        renderTableProductAdmin();
+                        renderTableDiscountAdmin();
                     });
-                    function renderTableProductAdmin(){
+                    function renderTableDiscountAdmin(){
                         $("#tableHead").html(`
                             <tr>
                                 <th scope="col">Number</th>
-                                <th scope="col">ProductId</th>
-                                <th scope="col">Name</th>
+                                <th scope="col">DiscountId</th>
+                                <th scope="col">Code</th>
                                 <th scope="col">Description</th>
-                                <th scope="col">Price</th>
-                                <th scope="col">StockQuantity</th>
+                                <th scope="col">DiscountPercent</th>
+                                <th scope="col">StartDate</th>
+                                <th scope="col">EndDate</th>
                                 <th scope="col">CreatedAt</th>
                                 <th scope="col">UpdatedAt</th>
                                 <th scope="col">IsActive</th>
@@ -410,7 +504,7 @@
                             </tr>
                         `);
                         $.ajax({
-                            url: '/Home/GetProducts',
+                            url: '/Home/GetDiscounts',
                             type: 'GET',
                             success: function (data){
                                 $("#datatable").empty();
@@ -421,19 +515,20 @@
                                         $("#datatable").append(`
                                             <tr>
                                                 <td>${index +1 }</td>
-                                                <td>${item.productId}</td>
-                                                <td>${item.name}</td>
-                                                <td>${item.description}</td>
-                                                <td>${item.price}</td>
-                                                <td>${item.stockQuantity}</td>
+                                                <td>${item.discountId}</td>
+                                                <td>${item.code}</td>
+                                                <td>${item.discountDescription}</td>
+                                                <td>${item.discountPercent}%</td>
+                                                <td>${item.startDate}</td>
+                                                <td>${item.endDate}</td>
                                                 <td>${item.createdAt}</td>
                                                 <td>${item.updatedAt}</td>
                                                 <td>${item.isActive}</td>
                                                 <td>
-                                                <a href="javascript:void(0);" class="px-2" onclick="deleteProductAdmin('${item.productId}')">
+                                                <a href="javascript:void(0);" class="px-2" onclick="deleteDiscountAdmin('${item.discountId}')">
                                                     Delete
                                                 </a>
-                                                <a href="javascript:void(0);" class="px-2" onclick="updateProductAdmin('${item.productId}')">
+                                                <a href="javascript:void(0);" class="px-2" onclick="updateDiscountAdmin('${item.discountId}')">
                                                     Edit
                                                 </a>
                                                 </td>
@@ -445,6 +540,60 @@
                             error: function(error) {
                                 console.log(error)
                                 console.log("Lỗi khi gọi GetProduct:", error);
+                            }
+                        });
+                    }
+                    break;
+                case 'tableproductdiscount':
+                    // contentArea.innerHTML = '<h3>New Products</h3><p>Here are the latest products.</p>';
+                    $(document).ready(function() {
+                        renderTableProductDiscountAdmin();
+                    });
+                    function renderTableProductDiscountAdmin(){
+                        $("#tableHead").html(`
+                            <tr>
+                                <th scope="col">Number</th>
+                                <th scope="col">ProductDiscountId</th>
+                                <th scope="col">ProductId</th>
+                                <th scope="col">DiscountId</th>
+                                <th scope="col">CreatedAt</th>
+                                <th scope="col">UpdatedAt</th>                                
+                                <th scope="col">Even</th>
+                            </tr>
+                        `);
+                        $.ajax({
+                            url: '/Home/GetProductDiscounts',
+                            type: 'GET',
+                            success: function (data){
+                                $("#datatable").empty();
+                                console.log("DATA CONTROLLER: ", data.length);
+                                console.log("DATA CONTROLLER: ", data);
+                                if(data.length > 0){
+                                    data.map((item, index) => {
+                                        $("#datatable").append(`
+                                            <tr>
+                                                <td>${index +1 }</td>
+                                                <td>${item.productDiscountId}</td>
+                                                <td>${item.productId}</td>
+                                                <td>${item.discountId}</td>
+                                                <td>${item.createdAt}</td>
+                                                <td>${item.isActive}</td>
+                                                <td>
+                                                <a href="javascript:void(0);" class="px-2" onclick="deleteUserAdmin('${item.productDiscountId}')">
+                                                    Delete
+                                                </a>
+                                                <a href="javascript:void(0);" class="px-2" onclick="updateUserAdmin('${item.productDiscountId}')">
+                                                    Edit
+                                                </a>
+                                                </td>
+                                            </tr>`
+                                        );
+                                    });
+                                }
+                            },
+                            error: function(error) {
+                                console.log(error)
+                                console.log("Lỗi khi gọi GetUser:", error);
                             }
                         });
                     }
@@ -575,7 +724,7 @@
             let description = $("#description").val();
             let price = $("#price").val();
             let stockquantity = $("#stockquantity").val();
-            let isactive = $("#product_isactive").val();
+            let isactive = $("#product_isactive").val();            
 
             $.ajax({
                 url:productid=="" ? '/Home/AddProductAdmin' : '/Home/UpdateProductAdmin/' + productid,
@@ -647,6 +796,166 @@
                     console.log(data);
                     //Hien model len
                     $("#productModal").modal('show');
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        }
+
+        // Function DISCOUNT for PPRODUCT Update ProductDiscount
+        function addDiscount(ma_ao){
+            console.log(ma_ao);
+            let discount_productid = $("#discount_productid").val();
+            let discountproduct = $("#discountproduct").val();
+            let discountproduct_isactive = $("#discountproduct_isactive").val();
+            $.ajax({
+                url: '/Home/DetailProductAdmin/' + ma_ao,
+                type: 'GET',
+                data:{
+                    ProductId: discount_productid,
+                    DiscountId: discountproduct,
+                    IsActive: discountproduct_isactive
+                },
+                success: function (data){
+                    console.log("Lay thong tin id de update");
+                    alert("Lay thong tin de update Thanh Cong");
+                    $("#discount_productid").val(data.productId);//lay id
+                    $("#discount_name").val(data.name);
+                    $("#discountproduct_isactive").val(data.isActive);
+
+                    //Hien model len
+                    $("#discountproductModal").modal('show');
+                },
+                error: function (error) {
+                    console.log(error)
+                }
+            });
+        }
+        function updateDiscount() {
+            let discount_productid = $("#discount_productid").val();
+            let discountproduct = $("#discountproduct").val();
+            let discountproduct_isactive = $("#discountproduct_isactive").val();
+            $.ajax({
+                url: '/Home/AddProductDiscountAdmin',
+                type: 'POST',
+                data: {
+                    ProductId: discount_productid,
+                    DiscountId: discountproduct,
+                    IsActive: discountproduct_isactive
+                },
+                success: function (data) {
+                    console.log(data);
+                    console.log("Cap nhat thanh cong");
+                    $("#discountproductModal").modal('hide');// an mmodel da tao di
+                    resetFormDiscountforProduct();
+                    //renderTableUserAdmin(); //hàm này dùng để gọi lại
+                    //changeContent('tableuser');//goi lai tableuser
+                    //changeContent('tableproduct');
+                },
+                error: function (error) {
+                    console.log(error)
+                }
+            });
+        }
+        function resetFormDiscountforProduct() {
+            //console.log("Chay resetForm")
+            $("#discount_productid").val("");
+            $("#discount_name").val("");
+            //$("#description").val("");
+            //$("#price").val("");
+            //$("#stockquantity").val("");
+            //$("#updateat").val("");
+            $("#discountproduct").val("");
+            $("#discountproduct_isactive").val("");
+        }
+        
+        // Function DISCOUNT
+        function addDiscountAdmin() {
+            let discountid = $("#discountid").val();
+            console.log("discountid: ", discountid)
+            let code = $("#code").val();
+            let discount_description = $("#discount_description").val();
+            let discountpercent = $("#discountpercent").val();
+            let startdate = $("#startdate").val();
+            let enddate = $("#enddate").val();
+            let createdate = $("#createdate").val();
+            let updatedate = $("#updatedate").val();
+            let isactive = $("#discount_isactive").val();
+            $.ajax({
+                url:discountid=="" ? '/Home/AddDiscountAdmin' : '/Home/UpdateDiscountAdmin/' + discountid,
+                type:discountid=="" ? 'POST' : 'PUT',
+                data: {
+                    Code: code,
+                    discountDescription: discount_description,
+                    DiscountPercent: discountpercent,
+                    StartDate: startdate,
+                    EndDate: enddate,
+                    CreateDate: createdate,
+                    UpdateDate: updatedate,
+                    IsActive: isactive
+                },
+                success: function (data) {
+                    console.log(data);
+                    console.log("Lay thanh cong");
+                    $("#discountModal").modal('hide');// an mmodel da tao di
+                    resetFormDiscount();
+                    //renderTableUserAdmin(); //hàm này dùng để gọi lại
+                    //changeContent('tableuser');//goi lai tableuser
+                    changeContent('tablediscount');
+                },
+                error: function (error) {
+                    console.log(error)
+                }
+            });
+        }
+        function resetFormDiscount() {
+            //console.log("Chay resetForm")
+            $("#discountid").val("");
+            $("#code").val("");
+            $("#discount_description").val("");
+            $("#discountpercent").val("");
+            $("#startdate").val("");
+            $("#enddate").val("");
+            $("#discount_isactive").val("");
+        }
+        function deleteDiscountAdmin(ma_ao) {
+            console.log(ma_ao);
+            $.ajax({
+                url: '/Home/DeleteDiscountAdmin/' + ma_ao,
+                type: 'DELETE',
+                success: function (data){
+                    console.log("Xoa Thanh Cong");
+                    alert("Xoa ThanhCong");
+                    //renderTableUserAdmin();
+                    changeContent('tablediscount');//goi lai tableuser
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        }
+        function updateDiscountAdmin(ma_ao) {
+            console.log(ma_ao);
+            $.ajax({
+                url: '/Home/DetailDiscountAdmin/' + ma_ao,
+                type: 'GET',
+                success: function (data){
+                    console.log("Lay thong tin de update");
+                    alert("Lay thong tin de update Thanh Cong");
+                    $("#discountid").val(data.discountId);
+                    $("#code").val(data.code);
+                    $("#discount_description").val(data.discountDescription);
+                    $("#discountpercent").val(data.discountPercent);
+                    $("#startdate").val(data.startDate);
+                    $("#enddate").val(data.endDate);
+                    //$("#createdate").val(data.createdAt);
+                    //$("#updatedate").val(data.updatedAt);
+                    $("#discount_isactive").val(data.isActive);
+                    //renderTableUserController();
+                    console.log(data);
+                    //Hien model len
+                    $("#discountModal").modal('show');
                 },
                 error: function (error) {
                     console.log(error);

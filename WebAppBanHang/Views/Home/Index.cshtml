@@ -34,10 +34,6 @@
     <div class="center-area">
         <h2>Danh Sách Thông tin Người Dùng</h2>
         <div id="content-area"></div>
-        <!--Nut button-->
-        <div class="flex justify-content-between py-2">
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">Add User</button>
-        </div>
         <!-- Nội dung riêng của Điện thoại -->
         <div class="flex justify-content-between py-2">
             <table class="table table-bordered">
@@ -71,7 +67,7 @@
             </div>
             <div class="modal-body">
                 <input type="text" id="userid" hidden class="form-control"> <!--id mđ ẩn đi-->
-                <form id="loginUserForm" method="post">
+                <form id="signupUserForm" method="post">
                     <div class="mb-3">
                         <label asp-for="UserName" for="username" class="form-label">Username</label>
                         <input asp-for="UserName" id="username" type="text" class="form-control">
@@ -86,18 +82,13 @@
                         <label asp-for="ConfirmPassword" for="confirmpassword" class="form-label">ConfirmPassword</label>
                         <input asp-for="ConfirmPassword" id="confirmpassword" type="password" class="form-control">
                         <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-                    </div>
-                    @* <div class="mb-3">
-                        <label for="confirmpassword" class="form-label">ConfirmPassword</label>
-                        <input id="confirmpassword" type="password" class="form-control">
-                        <span class="text-danger">@ViewData["PasswordError"]</span>
-                    </div> *@
+                    </div>                    
                     <div class="mb-3">
                         <label asp-for="Email" for="email" class="form-label">Email</label>
                         <input asp-for="Email" id="email" type="email" class="form-control">
                         <span asp-validation-for="Email" class="text-danger"></span>
                     </div>
-                    <button type="button" class="btn btn-primary" onclick="signUpUser()">Xác nhận</button>
+                    <button type="submit" class="btn btn-primary" onclick="signUpUser()">Xác nhận</button>
                 </form>
             </div>
         </div>
@@ -129,6 +120,7 @@
                                 <th scope="col">Description</th>
                                 <th scope="col">Price</th>
                                 <th scope="col">Stock Quantity</th>
+                                <th scope="col">Discount</th>
                                 <th scope="col">Sự kiện</th>
                             </tr>
                         `);
@@ -146,10 +138,11 @@
                                                 <td>${index +1 }</td>
                                                 <td>${item.name}</td>
                                                 <td>${item.description}</td>
-                                                <td>${item.price}</td>
+                                                <td>${item.price}</td>                                                
                                                 <td>${item.stockQuantity}</td>
+                                                <td>${item.discountPercent}</td>
                                                 <td>
-                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">Add User</button>
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#buyModal">Buy</button>
                                                 </td>
                                             </tr>`
                                         );

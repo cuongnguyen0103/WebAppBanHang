@@ -22,5 +22,9 @@ namespace WebAppBanHang.Models.Entity
         // Quan he voi OrderDetail
         [InverseProperty("Product")]
         public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
+
+        // Quan he voi ProductDiscount
+        [InverseProperty("Product")]
+        public virtual ICollection<ProductDiscount> ProductDiscounts { get; set; } = new List<ProductDiscount>();
     }
 }
