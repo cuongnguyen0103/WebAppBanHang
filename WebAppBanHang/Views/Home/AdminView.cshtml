@@ -182,7 +182,7 @@
                         <label for="discountproduct_isactive" class="form-label">isActive</label>
                         <input id="discountproduct_isactive" name="discountproduct_isactive" type="text" class="form-control">
                     </div>
-                    <button type="submit" class="btn btn-primary" onclick="updateDiscount()">Xác nhận</button>
+                    <button type="submit" class="btn btn-primary" onclick="updateDiscountForm()">Xác nhận</button>
                 </form>
             </div>
         </div>
@@ -349,7 +349,7 @@
                                                 </a>
                                                 </td>
                                                 <td>
-                                                <a href="javascript:void(0);" class="px-2" onclick="addDiscount('${item.productId}')">
+                                                <a href="javascript:void(0);" class="px-2" onclick="addDiscountProduct('${item.productId}')">
                                                     Add Discount
                                                 </a>
                                                 <a href="javascript:void(0);" class="px-2" onclick="updatedDiscount('${item.productId}')">
@@ -804,7 +804,7 @@
         }
 
         // Function DISCOUNT for PPRODUCT Update ProductDiscount
-        function addDiscount(ma_ao){
+        function addDiscountProduct(ma_ao){
             console.log(ma_ao);
             let discount_productid = $("#discount_productid").val();
             let discountproduct = $("#discountproduct").val();
@@ -832,7 +832,7 @@
                 }
             });
         }
-        function updateDiscount() {
+        function updateDiscountForm() {
             let discount_productid = $("#discount_productid").val();
             let discountproduct = $("#discountproduct").val();
             let discountproduct_isactive = $("#discountproduct_isactive").val();

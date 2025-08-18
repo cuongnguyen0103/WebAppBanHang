@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebAppBanHang.Models.Entity;
 
@@ -11,9 +12,11 @@ using WebAppBanHang.Models.Entity;
 namespace WebAppBanHang.Migrations
 {
     [DbContext(typeof(WebAppBanHangContext))]
-    partial class WebAppBanHangContextModelSnapshot : ModelSnapshot
+    [Migration("20250818100601_Init12")]
+    partial class Init12
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

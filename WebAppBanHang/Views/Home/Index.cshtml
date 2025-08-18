@@ -5,6 +5,7 @@
 
 @* @model WebAppBanHang.ViewModels.AllTablesViewModel; *@
 @model WebAppBanHang.Models.Entity.User;
+
 <!-- Tab Index -->
 <div class="row">
     <!-- Sidebar bên trái -->
@@ -95,7 +96,51 @@
     </div>
 </div>
 
-
+<!--BUY-->
+<div class="modal fade" id="buyModal" tabindex="-1" aria-labelledby="buyModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="buyModalLabel">Add Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="productid" hidden class="form-control"> <!--id mđ ẩn đi-->
+                <form id="buyproductForm" method="post">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name</label>
+                        <input id="name" name="name" type="text" class="form-control">
+                    </div>
+                    @* <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <input id="description" name="description" type="text" class="form-control">
+                    </div> *@
+                    <div class="mb-3">
+                        <label for="price" class="form-label">Price</label>
+                        <input id="price" name="price" type="number" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="stockquantity" class="form-label">StockQuantity</label>
+                        <input id="stockquantity" name="stockquantity" type="number" class="form-control">
+                    </div>
+                    <div>
+                        <label for="discountpercent" class="form-label">DiscountPercent</label>
+                        <input id="discountpercent" name="discountpercent" type="number" class="form-control">
+                    </div>
+                    <div>
+                        <label for="quality" class="form-label">Quality</label>
+                        <input id="quality" name="discountpercent" type="number" class="form-control">
+                    </div>
+                    @* <div class="mb-3">
+                        <label for="product_isactive" class="form-label">isActive</label>
+                        <input id="product_isactive" name="product_isactive" type="text" class="form-control">
+                    </div> *@
+                    <button type="submit" class="btn btn-primary" onclick="buyProduct()">Xác nhận</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!--Code-->
 @section Scripts {
@@ -142,7 +187,9 @@
                                                 <td>${item.stockQuantity}</td>
                                                 <td>${item.discountPercent}</td>
                                                 <td>
-                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#buyModal">Buy</button>
+                                                <a href="javascript:void(0);" class="px-2" onclick="getdatatobuyProduct('${item.productId}')">
+                                                    Buy
+                                                </a>
                                                 </td>
                                             </tr>`
                                         );
@@ -557,6 +604,82 @@
             $("#password").val("");
             $("#confirmpassword").val("");
             $("#email").val("");
+        }
+
+        // Function Buy
+        function getdatatobuyProduct(ma_ao) {      
+            console.log(ma_ao);
+            $.ajax({
+                url:'/Home/GetProductById/' + ma_ao,
+                type:'GET',                
+                success: function (data) {
+                    console.log("Buy success");
+                    console.log(data);
+
+                    // vi du lieu tra ve la mang nen lay theo vi tri
+                    data = data[0];
+
+                    //gan
+                    $("#productid").val(data.productId);
+                    $("#name").val(data.name);
+                    //$("#description").val(data.description);
+                    $("#price").val(data.price);
+                    $("#stockquantity").val(data.stockQuantity);
+                    $("#discountpercent").val(data.discountPercent);
+                    //$("#product_isactive").val(data.isActive);
+                    // Show tab
+                    $("#buyModal").modal('show');
+                    //Khoa field
+                    $("#name").prop("readonly", true);
+                    $("#price").prop("readonly", true);
+                    $("#stockquantity").prop("readonly", true);
+                    $("#discountpercent").prop("readonly", true);
+                },
+                error: function (error) {
+                    console.log(error)
+                }
+            });
+        }
+        function resetBuyForm() {
+            //console.log("Chay resetForm")
+            $("#productid").val("");
+            $("#name").val("");
+            $("#description").val("");
+            $("#price").val("");
+            $("#stockquantity").val("");
+            $("#product_isactive").val("");
+        }
+        function buyProduct() {
+            let productid = $("#productid").val();
+            let name = $("#name").val();
+            //let description = $("#description").val();
+            let price = $("#price").val();
+            let stockquantity = $("#stockquantity").val();
+            let discountpercent = $("#discountpercent").val();
+            let quality = $("#quality").val();
+            //let product_isactive = $("#product_isactive").val();
+            $.ajax({
+                url:'/Home/BuyProduct',
+                type:'POST',
+                data: {
+                    ProductId: productid,
+                    Name: name,
+                    //Description: description,
+                    Price: price,
+                    StockQuantity: stockquantity,
+                    DiscountPercent: discountpercent,
+                    Quality: quality
+                    //IsActive: product_isactive
+                },
+                success: function (data) {
+                    console.log("Buy success");
+                    $("#buyModal").modal('hide');
+                    resetBuyForm();
+                },
+                error: function (error) {
+                    console.log(error)
+                }
+            });
         }
     </script>
 }

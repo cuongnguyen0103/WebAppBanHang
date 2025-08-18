@@ -54,7 +54,105 @@ namespace WebAppBanHang.Controllers
                                 .ToList();
             return Ok(products);
         }
+
+        // GET DATA PRODUCT BY ID
+        [HttpGet("Home/GetProductById/{productid}")]
+        public async Task<IActionResult> GetProductById(int productid)
+        {
+            var product = _context.Products
+                                .Include(p => p.ProductDiscounts)
+                                .ThenInclude(pd => pd.Discount)
+                                .Where(p => p.ProductId == productid)
+                                .Select(p => new
+                                {
+                                    p.ProductId,
+                                    p.Name,
+                                    p.Description,
+                                    p.Price,
+                                    p.StockQuantity,
+                                    DiscountPercent = p.ProductDiscounts
+                                    .Where(pd => pd.IsActive && pd.Discount.IsActive &&
+                                                pd.Discount.StartDate <= DateTime.Now &&
+                                                pd.Discount.EndDate >= DateTime.Now)
+                                    .Select(pd => pd.Discount.DiscountPercent)
+                                .FirstOrDefault() // lấy giảm giá đầu tiên nếu có, mặc định là 0
+                                })
+                                .ToList();
+            //var product = _context.Products.FirstOrDefault(p => p.ProductId == productid); // lọc theo productid và còn hàng
+
+            //var discountPercent = _context.ProductDiscounts
+            //    .Where(pd => pd.ProductId == productid && pd.IsActive && pd.Discount.IsActive &&
+            //        pd.Discount.StartDate <= DateTime.Now &&
+            //        pd.Discount.EndDate >= DateTime.Now)
+            //    .Select(pd => pd.Discount.DiscountPercent)
+            //    .FirstOrDefault(); // lấy giảm giá đầu tiên nếu có, mặc định là 0
+            //var product = _context.Products
+            //        .Include(p => p.ProductDiscounts)
+            //        .ThenInclude(pd => pd.Discount)
+            //        .FirstOrDefault(p => p.ProductId == productid && p.StockQuantity == 0);
+            // Lấy cột DiscountPercent từ ProductDiscounts
+            //var discountPercent = product?.ProductDiscounts
+            //        .Where(pd => pd.IsActive && pd.Discount.IsActive &&
+            //            pd.Discount.StartDate <= DateTime.Now &&
+            //            pd.Discount.EndDate >= DateTime.Now)
+            //        .Select(pd => pd.Discount.DiscountPercent)
+            //        .FirstOrDefault();
+            if (product == null)
+            {
+                return BadRequest("Sản phẩm không tồn tại hoặc đã hết hàng.");
+            }
+            return Ok(product);
+        }
+
+        // BUY PRODUCT
+        [HttpPost("Home/BuyProduct")]
+        public IActionResult BuyProduct(Product input, OrderDetail input1)
+        {
+            //lay session nhan tu Login
+            int userId = HttpContext.Session.GetInt32("UserId") ?? 0;
+            if (userId == 0)
+            {
+                return View(View("Login"));
+            }
+            // Kiểm tra xem sản phẩm có tồn tại và còn hàng không
+            var product = _context.Products
+                            .Include(p => p.ProductDiscounts)
+                            .ThenInclude(pd => pd.Discount)
+                            .FirstOrDefault(p => p.ProductId == input.ProductId);
+            if (product == null || product.StockQuantity <= 0)
+            {
+                return BadRequest("Sản phẩm không tồn tại hoặc số lượng yêu cầu vượt quá số lượng trong kho.");
+            }
+            // Giam gia
+            var discountPercent = product.ProductDiscounts
+                            .Where(pd => pd.IsActive && pd.Discount.IsActive &&
+                                    pd.Discount.StartDate <= DateTime.Now &&
+                                    pd.Discount.EndDate >= DateTime.Now)
+                            .Select(pd => pd.Discount.DiscountPercent)
+                            .FirstOrDefault();
+            decimal finalPrice = product.Price*(1-(discountPercent/100));
+
+            // Add OrderDetail
+
+            // Add Order
+            var order = new Order
+            {
+                UserId = userId,
+                OrderDate = DateTime.Now,
+                Status = "Pending",
+                CreatedAt = DateTime.Now,
+                TotalAmount = finalPrice * input1.Quantity, // Tính tổng tiền
+                IsActive = true
+            };
+            // Giảm số lượng sản phẩm trong kho
+            //product.StockQuantity -= quantity;
+            _context.SaveChanges();
+            // Trả về thông báo thành công
+            return Ok("Mua hàng thành công!");
+        }
+
         #endregion NEW PRODUCT
+
         #endregion
 
         #region LOGIN/LOGOUT/USERINFO
@@ -77,6 +175,7 @@ namespace WebAppBanHang.Controllers
                 return BadRequest("Incorrect password.");
             }
             // lay session
+            HttpContext.Session.SetInt32("UserId", user.UserId);
             HttpContext.Session.SetString("UserName", user.UserName);
             HttpContext.Session.SetString("Role", user.Role);
             //return View("Index");

@@ -12,8 +12,10 @@ namespace WebAppBanHang.Models.Entity
         public int UserId { get; set; }
 
         public DateTime OrderDate { get; set; }
+        public string Status { get; set; } = "Pending"; // Trạng thái đơn hàng, có thể là "Pending", "Processing", "Completed", "Cancelled", v.v.
 
         public DateTime CreatedAt { get; set; }
+        public decimal TotalAmount { get; set; }
         public bool IsActive { get; set; } = true;
 
         //Quan he voi User
