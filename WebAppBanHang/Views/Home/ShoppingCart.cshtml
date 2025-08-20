@@ -1,0 +1,233 @@
+﻿@{
+    ViewData["Title"] = "Shopping Cart";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@model WebAppBanHang.ViewModels.AllTablesViewModel
+
+<div class="row">
+    <!-- Sidebar bên trái -->
+    @* <div class="left-area col-md-2"> *@
+    <div class="left-area">
+        <h4>Danh mục</h4>
+        <ul class="list-group">
+            <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('tabshoppingcart')"> Shopping Cart </a> </li>
+            <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('tabordercompleted')"> Order Completed </a></li>
+            <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('tabreturnorder')"> Return Order </a></li>            
+        </ul>
+    </div>
+
+    <!-- Phần hiển thị chính -->
+    @* <div center-area class="col-md-10 text-break overflow-auto p-3" style="max-width: 100%;"> *@
+    <div class="center-area">
+        <h2>Danh Sách Thông tin Người Dùng</h2>
+        <div id="content-area"></div>
+        <!--Nut button-->
+        <div class="flex justify-content-between py-2">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal">Add User</button>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#productModal">Add Product</button>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#discountModal">Add Discount</button>
+        </div>
+        <div class="flex justify-content-between py-2">
+            <table class="table table-bordered">
+                <thead id="tableHead">        
+                    
+                </thead>
+                <tbody id="datatable">
+                </tbody>
+
+            </table>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function changeContent(tabName) {
+            var contentArea = document.getElementById('content-area');
+            if (tabName === 'tabshoppingcart') {
+                contentArea.innerHTML = '<h3>Shopping Cart Content</h3><p>Here you can manage your shopping cart.</p>';
+                $(document).ready(function() {
+                    renderShoppingCart();
+                });
+                function renderShoppingCart(){
+                    $("#tableHead").html(`
+                        <tr>
+                            <th>Number</th>
+                            <th>Name</th>
+                            <th>StockQuantity</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>DiscountPercent</th>
+                            <th>Amount</th>
+                            <th>Even</th>
+                        </tr>
+                     `);
+                     $.ajax({
+                        url: '/Home/GetShoppingCart',
+                        type: 'GET',
+                        success: function (data){
+                             $("#datatable").empty();
+                             console.log("DATA CONTROLLER: ", data.length);
+                             console.log("DATA CONTROLLER: ", data);
+                            if (data && data.orderDetails && data.orderDetails.length > 0) {//xet du lieu tra ve dang Object
+                                data.orderDetails.forEach((item, index) => {
+                                    const product = item.product;
+                                    const discount = product.discountPercent || 0;
+                                    const total = item.quantity * item.price * (1 - discount / 100);
+
+                                    $("#datatable").append(`
+                                        <tr>
+                                            <td>${index + 1}</td>
+                                            <td>${product.name}</td>
+                                            <td>${product.stockQuantity}</td>
+                                            <td>${item.quantity}</td>
+                                            <td>${item.price}</td>
+                                            <td>${discount}%</td>
+                                            <td>${total.toLocaleString()} VND</td>
+                                            <td>
+                                                <a href="javascript:void(0);" class="px-2" onclick="deleteUserAdmin('${data.userId}')">
+                                                    Delete
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    `);
+                                });
+                                // Thêm dòng tổng tiền
+                                $("#datatable").append(`
+                                    <tr>
+                                        <td colspan="6" style="text-align:right; font-weight:bold;">Tổng tiền:</td>
+                                        <td colspan="1" style="font-weight:bold;">${data.totalAmount} VND</td>
+                                        <td colspan="1" style="font-weight:bold;">
+                                            <a href="javascript:void(0);" class="px-2" onclick="payOrder('${data.userId}')">
+                                                Pay
+                                            </a></td>
+                                    </tr>
+                                `);
+                            } else {
+                                $("#datatable").append(`
+                                    <tr>
+                                        <td colspan="8" style="text-align:center;">Giỏ hàng trống</td>
+                                    </tr>
+                                `);
+                            }
+                        },
+                        error: function(error) {
+                            console.log(error)
+                            console.log("Lỗi khi gọi GetShoppingCart:", error);
+                        }
+                    });
+                }
+            } else if (tabName === 'tabordercompleted') {
+                contentArea.innerHTML = '<h3>Order Completed Content</h3><p>Here you can view completed orders.</p>';
+                $(document).ready(function() {
+                    renderOrderCompleted();
+                });
+                function renderOrderCompleted(){
+                    $("#tableHead").html(`
+                        <tr>
+                            <th>Number</th>
+                            <th>Name</th>
+                            <th>StockQuantity</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>DiscountPercent</th>
+                            <th>Amount</th>
+                            <th>Even</th>
+                        </tr>
+                     `);
+                     $.ajax({
+                        url: '/Home/GetOrderCompleted',
+                        type: 'GET',
+                        success: function (data){                            
+                            $("#datatable").empty();
+                            console.log("DATA CONTROLLER: ", data.length);
+                            console.log("DATA CONTROLLER: ", data);
+                            if (data && data.orderDetails && data.orderDetails.length > 0) {//xet du lieu tra ve dang Object
+                                // $("#tableHead").html(`
+                                //     <tr>
+                                //         <th>Number</th>
+                                //         <th>Name</th>
+                                //         <th>StockQuantity</th>
+                                //         <th>Quantity</th>
+                                //         <th>Price</th>
+                                //         <th>DiscountPercent</th>
+                                //         <th>Amount</th>
+                                //         <th>Even</th>
+                                //     </tr>
+                                // `);
+                                data.orderDetails.forEach((item, index) => {
+                                    const product = item.product;
+                                    const discount = product.discountPercent || 0;
+                                    const total = item.quantity * item.price * (1 - discount / 100);
+
+                                    $("#datatable").append(`
+                                        <tr>
+                                            <td>${index + 1}</td>
+                                            <td>${product.name}</td>
+                                            <td>${product.stockQuantity}</td>
+                                            <td>${item.quantity}</td>
+                                            <td>${item.price}</td>
+                                            <td>${discount}%</td>
+                                            <td>${total.toLocaleString()} VND</td>
+                                            <td>
+                                                <a href="javascript:void(0);" class="px-2" onclick="deleteUserAdmin('${data.userId}')">
+                                                    Delete
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    `);
+                                });
+                                // Thêm dòng tổng tiền
+                                $("#datatable").append(`
+                                    <tr>
+                                        <td colspan="6" style="text-align:right; font-weight:bold;">Tổng tiền:</td>
+                                        <td colspan="1" style="font-weight:bold;">${data.totalAmount} VND</td>
+                                        <td colspan="1" style="font-weight:bold;">
+                                            <a href="javascript:void(0);" class="px-2" onclick="payOrder('${data.userId}')">
+                                                Pay
+                                            </a></td>
+                                    </tr>
+                                `);
+                            } else {
+                                $("#tableHead").empty(); //an bảng đi
+                                $("#datatable").append(`
+                                    <tr>
+                                        <td colspan="8" style="text-align:center;">Giỏ hàng trống</td>
+                                    </tr>
+                                `);
+                            }
+                        },
+                        error: function(error) {
+                            console.log(error)
+                            console.log("Lỗi khi gọi GetShoppingCart:", error);
+                        }
+                    });
+                }
+            } else if (tabName === 'tabreturnorder') {
+                contentArea.innerHTML = '<h3>Return Order Content</h3><p>Here you can manage return orders.</p>';
+
+            }
+        }
+
+        // Pay Order
+        function payOrder(ma_ao) {
+            console.log("Paying order for userId:", ma_ao);
+            if (confirm("Are you sure you want to pay for this order?")) {
+                $.ajax({
+                    url: '/Home/PayOrder/' + ma_ao,
+                    type: 'PUT',
+                    data: { userId: ma_ao },
+                    success: function(response) {
+                        alert("Payment successful!");
+                        changeContent('tabshoppingcart'); // Refresh the shopping cart view
+                    },
+                    error: function(error) {
+                        console.error("Error during payment:", error);
+                        alert("Payment failed. Please try again.");
+                    }
+                });
+            }
+        }
+    </script>    
+}

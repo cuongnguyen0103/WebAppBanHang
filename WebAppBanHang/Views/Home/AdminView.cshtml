@@ -379,8 +379,10 @@
                                 <th scope="col">Number</th>
                                 <th scope="col">OrderId</th>
                                 <th scope="col">UserId</th>
-                                <th scope="col">OrderDate</th>
+                                <th scope="col">Status</th>
                                 <th scope="col">CreatedAt</th>
+                                <th scope="col">OrderDate</th>
+                                <th scope="col">TotalAmount</th>
                                 <th scope="col">IsActive</th>
                                 //<th scope="col">Even</th>
                             </tr>
@@ -399,17 +401,16 @@
                                                 <td>${index +1 }</td>
                                                 <td>${item.orderId}</td>
                                                 <td>${item.userId}</td>
-                                                <td>${item.orderDate}</td>
+                                                <td>${item.status}</td>
                                                 <td>${item.createdAt}</td>
+                                                <td>${item.orderDate}</td>
+                                                <td>${item.totalAmount}</td>
                                                 <td>${item.isActive}</td>
-                                                // <td>
-                                                // <a href="javascript:void(0);" class="px-2" onclick="deleteProductAdmin('${item.productId}')">
-                                                //     Delete
-                                                // </a>
-                                                // <a href="javascript:void(0);" class="px-2" onclick="updateProductAdmin('${item.productId}')">
-                                                //     Edit
-                                                // </a>
-                                                // </td>
+                                                <td>
+                                                <a href="javascript:void(0);" class="px-2" onclick="deleteOrderAdmin('${item.orderId}')">
+                                                    Delete
+                                                </a>
+                                                </td>
                                             </tr>`
                                         );
                                     });
@@ -432,10 +433,10 @@
                             <tr>
                                 <th scope="col">Number</th>
                                 <th scope="col">ProductId</th>
-                                <th scope="col">Name</th>
-                                <th scope="col">Description</th>
+                                <th scope="col">OrderId</th>
+                                <th scope="col">Quantity</th>
                                 <th scope="col">Price</th>
-                                <th scope="col">StockQuantity</th>
+                                <th scope="col">DiscountId</th>
                                 <th scope="col">CreatedAt</th>
                                 <th scope="col">UpdatedAt</th>
                                 <th scope="col">IsActive</th>
@@ -443,7 +444,7 @@
                             </tr>
                         `);
                         $.ajax({
-                            url: '/Home/GetProducts',
+                            url: '/Home/GetOrderDetails',
                             type: 'GET',
                             success: function (data){
                                 $("#datatable").empty();
@@ -455,10 +456,10 @@
                                             <tr>
                                                 <td>${index +1 }</td>
                                                 <td>${item.productId}</td>
-                                                <td>${item.name}</td>
-                                                <td>${item.description}</td>
+                                                <td>${item.orderId}</td>
+                                                <td>${item.quantity}</td>
                                                 <td>${item.price}</td>
-                                                <td>${item.stockQuantity}</td>
+                                                <td>${item.discountId}</td>
                                                 <td>${item.createdAt}</td>
                                                 <td>${item.updatedAt}</td>
                                                 <td>${item.isActive}</td>
@@ -851,7 +852,8 @@
                     resetFormDiscountforProduct();
                     //renderTableUserAdmin(); //hàm này dùng để gọi lại
                     //changeContent('tableuser');//goi lai tableuser
-                    //changeContent('tableproduct');
+                    changeContent('tableproductdiscount');
+                    
                 },
                 error: function (error) {
                     console.log(error)
@@ -869,7 +871,24 @@
             $("#discountproduct").val("");
             $("#discountproduct_isactive").val("");
         }
-        
+
+        // Function ORDER
+        function deleteOrderAdmin(ma_ao) {
+            console.log(ma_ao);
+            $.ajax({
+                url: '/Home/DeleteOrderAdmin/' + ma_ao,
+                type: 'DELETE',
+                success: function (data){
+                    console.log("Xoa Thanh Cong");
+                    alert("Xoa ThanhCong");
+                    //renderTableUserAdmin();
+                    //changeContent('tableuser');//goi lai tableuser
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        }
         // Function DISCOUNT
         function addDiscountAdmin() {
             let discountid = $("#discountid").val();

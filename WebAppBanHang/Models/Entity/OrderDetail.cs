@@ -13,7 +13,9 @@ namespace WebAppBanHang.Models.Entity
         public int ProductId { get; set; }
 
         [Column(TypeName = "decimal(18, 2)")]
-        public decimal Quantity { get; set; }
+        public int Quantity { get; set; }
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal Price { get; set; }
 
         public int? DiscountId { get; set; }
 

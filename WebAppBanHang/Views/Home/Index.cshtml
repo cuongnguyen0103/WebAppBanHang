@@ -10,6 +10,13 @@
 <div class="row">
     <!-- Sidebar bên trái -->
     <h2 class="title">Chào mừng đến với trang Index!</h2>
+    <!--Search-->
+    <div class="search-bar">
+        <form id="searchForm" method="get" action="/Home/SearchProduct">
+            <input type="text" id="searchInput" name="query" placeholder="Tìm kiếm sản phẩm...">
+            <button type="submit" onclick="searchproduct()">Tìm kiếm</button>
+        </form>
+    </div>
     @* <div class="left-area col-md-2"> *@
     <div class="left-area">
         <h4>Danh mục</h4>
@@ -111,10 +118,10 @@
                         <label for="name" class="form-label">Name</label>
                         <input id="name" name="name" type="text" class="form-control">
                     </div>
-                    @* <div class="mb-3">
+                    <div class="mb-3">
                         <label for="description" class="form-label">Description</label>
                         <input id="description" name="description" type="text" class="form-control">
-                    </div> *@
+                    </div>
                     <div class="mb-3">
                         <label for="price" class="form-label">Price</label>
                         <input id="price" name="price" type="number" class="form-control">
@@ -128,8 +135,8 @@
                         <input id="discountpercent" name="discountpercent" type="number" class="form-control">
                     </div>
                     <div>
-                        <label for="quality" class="form-label">Quality</label>
-                        <input id="quality" name="discountpercent" type="number" class="form-control">
+                        <label for="quantity" class="form-label">quantity</label>
+                        <input id="quantity" name="quantity" type="number" class="form-control">
                     </div>
                     @* <div class="mb-3">
                         <label for="product_isactive" class="form-label">isActive</label>
@@ -148,6 +155,76 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
     <script>
+            // Function to handle search
+        $(document).ready(function() {
+            $("#searchForm").on("submit", function (e) {
+                e.preventDefault(); // Ngăn reload trang
+                // searchproduct();
+            });
+        });
+        function searchproduct() {       
+            const query = document.getElementById("searchInput").value.trim();
+            if (!query) {
+            alert("Please enter a search term.");
+                return;
+            }
+            $("#tableHead").html(`
+                <tr>
+                    <th scope="col">Artical</th>
+                    <th scope="col">ProDucts Name</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Price</th>
+                    <th scope="col">Stock Quantity</th>
+                    <th scope="col">Discount</th>
+                    <th scope="col">Sự kiện</th>
+                    </tr>
+            `);
+            $.ajax({
+                url: '/Home/SearchProduct/' + encodeURIComponent(query), //encodeURIComponent tránh font
+                type: 'GET',
+                success: function (data){
+                    $("#datatable").empty();
+                    console.log("DATA CONTROLLER: ", data.length);
+                    console.log("DATA CONTROLLER: ", data);
+                    if(data.length > 0){
+                        data.map((item, index) => {
+                            $("#datatable").append(`
+                                <tr>
+                                    <td>${index +1 }</td>
+                                    <td>${item.name}</td>
+                                    <td>${item.description}</td>
+                                    <td>${item.price}</td>
+                                    <td>${item.stockQuantity}</td>
+                                    <td>${item.discountPercent}</td>
+                                    <td>
+                                    <a href="javascript:void(0);" class="px-2" onclick="getdatatobuyProduct('${item.productId}')">
+                                        Buy
+                                    </a>
+                                    ${
+                                        item.stockQuantity > 0
+                                        ? `<a href="javascript:void(0);" class="px-2" onclick="getdatatobuyProduct('${item.productId}')">Buy</a>`
+                                        : `<span class="text-muted px-2" style="cursor: not-allowed;">Out of stock</span>`
+                                    }
+                                    </td>
+                                </tr>`
+                            );
+                        });
+                    }else{
+                        $("#tableHead").empty(); //an bảng đi
+                        $("#datatable").append(`
+                            <tr>
+                                <td colspan="7" style="text-align:center;">Không tìm thấy sản phẩm</td>
+                            </tr>
+                        `);
+                    }
+                },
+                error: function(error) {
+                    console.log(error)
+                }
+            });
+            //return false; //Ngăn form reload trang
+        }
+
         function changeContent(content) { //Selection-Buttons
             console.log("Change content to: ", content);
             const contentArea = document.getElementById("content-area");
@@ -622,18 +699,20 @@
                     //gan
                     $("#productid").val(data.productId);
                     $("#name").val(data.name);
-                    //$("#description").val(data.description);
+                    $("#description").val(data.description);
                     $("#price").val(data.price);
                     $("#stockquantity").val(data.stockQuantity);
                     $("#discountpercent").val(data.discountPercent);
                     //$("#product_isactive").val(data.isActive);
+
                     // Show tab
                     $("#buyModal").modal('show');
                     //Khoa field
                     $("#name").prop("readonly", true);
+                    $("#description").prop("readonly", true);
                     $("#price").prop("readonly", true);
                     $("#stockquantity").prop("readonly", true);
-                    $("#discountpercent").prop("readonly", true);
+                    $("#discountpercent").prop("readonly", true);                    
                 },
                 error: function (error) {
                     console.log(error)
@@ -647,16 +726,18 @@
             $("#description").val("");
             $("#price").val("");
             $("#stockquantity").val("");
-            $("#product_isactive").val("");
+            //$("#product_isactive").val("");
+            $("#discountpercent").val("");
+            $("#quantity").val("");
         }
         function buyProduct() {
             let productid = $("#productid").val();
             let name = $("#name").val();
-            //let description = $("#description").val();
+            let description = $("#description").val();
             let price = $("#price").val();
             let stockquantity = $("#stockquantity").val();
             let discountpercent = $("#discountpercent").val();
-            let quality = $("#quality").val();
+            let quantity = $("#quantity").val();
             //let product_isactive = $("#product_isactive").val();
             $.ajax({
                 url:'/Home/BuyProduct',
@@ -664,11 +745,11 @@
                 data: {
                     ProductId: productid,
                     Name: name,
-                    //Description: description,
+                    Description: description,
                     Price: price,
                     StockQuantity: stockquantity,
                     DiscountPercent: discountpercent,
-                    Quality: quality
+                    Quantity: quantity
                     //IsActive: product_isactive
                 },
                 success: function (data) {

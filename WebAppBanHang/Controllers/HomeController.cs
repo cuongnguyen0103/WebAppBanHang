@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using WebAppBanHang.Models;
 using WebAppBanHang.Models.Entity;
+using WebAppBanHang.Models.Entity.Dto;
 using WebAppBanHang.ViewModels;
 
 
@@ -31,6 +32,40 @@ namespace WebAppBanHang.Controllers
 
         // NEW PRODUCT
         #region NEW PRODUCT
+
+        // Search Product
+        [HttpGet("Home/SearchProduct/{name}")]
+        public IActionResult SearchProduct(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+            {
+                return BadRequest("Tên sản phẩm không được để trống.");
+            }
+            var products = _context.Products
+                .Where(p => p.Name.Contains(name) && p.IsActive)
+                .Include(p => p.ProductDiscounts)
+                .ThenInclude(pd => pd.Discount)
+                .Select(p => new ProductDto
+                {
+                    ProductId = p.ProductId,
+                    Name = p.Name,
+                    Description = p.Description,
+                    Price = p.Price,
+                    StockQuantity = p.StockQuantity,
+                    DiscountPercent = p.ProductDiscounts
+                        .Where(pd => pd.IsActive && pd.Discount.IsActive &&
+                                    pd.Discount.StartDate <= DateTime.Now &&
+                                    pd.Discount.EndDate >= DateTime.Now)
+                        .Select(pd => (decimal?)pd.Discount.DiscountPercent)
+                        .FirstOrDefault() ?? 0 // lấy giảm giá đầu tiên nếu có, mặc định là 0
+                })
+                .ToList();
+            if (!products.Any())
+            {
+                Ok(new List<object>()); // Trả về mảng rỗng
+            }
+            return Ok(products);
+        }
         // GET NEW PRODUCT
         public IActionResult NewProduct()
         {
@@ -63,13 +98,13 @@ namespace WebAppBanHang.Controllers
                                 .Include(p => p.ProductDiscounts)
                                 .ThenInclude(pd => pd.Discount)
                                 .Where(p => p.ProductId == productid)
-                                .Select(p => new
+                                .Select(p => new ProductDto                 // DTO
                                 {
-                                    p.ProductId,
-                                    p.Name,
-                                    p.Description,
-                                    p.Price,
-                                    p.StockQuantity,
+                                    ProductId = p.ProductId,
+                                    Name = p.Name,
+                                    Description = p.Description,
+                                    Price = p.Price,
+                                    StockQuantity = p.StockQuantity,
                                     DiscountPercent = p.ProductDiscounts
                                     .Where(pd => pd.IsActive && pd.Discount.IsActive &&
                                                 pd.Discount.StartDate <= DateTime.Now &&
@@ -77,26 +112,7 @@ namespace WebAppBanHang.Controllers
                                     .Select(pd => pd.Discount.DiscountPercent)
                                 .FirstOrDefault() // lấy giảm giá đầu tiên nếu có, mặc định là 0
                                 })
-                                .ToList();
-            //var product = _context.Products.FirstOrDefault(p => p.ProductId == productid); // lọc theo productid và còn hàng
-
-            //var discountPercent = _context.ProductDiscounts
-            //    .Where(pd => pd.ProductId == productid && pd.IsActive && pd.Discount.IsActive &&
-            //        pd.Discount.StartDate <= DateTime.Now &&
-            //        pd.Discount.EndDate >= DateTime.Now)
-            //    .Select(pd => pd.Discount.DiscountPercent)
-            //    .FirstOrDefault(); // lấy giảm giá đầu tiên nếu có, mặc định là 0
-            //var product = _context.Products
-            //        .Include(p => p.ProductDiscounts)
-            //        .ThenInclude(pd => pd.Discount)
-            //        .FirstOrDefault(p => p.ProductId == productid && p.StockQuantity == 0);
-            // Lấy cột DiscountPercent từ ProductDiscounts
-            //var discountPercent = product?.ProductDiscounts
-            //        .Where(pd => pd.IsActive && pd.Discount.IsActive &&
-            //            pd.Discount.StartDate <= DateTime.Now &&
-            //            pd.Discount.EndDate >= DateTime.Now)
-            //        .Select(pd => pd.Discount.DiscountPercent)
-            //        .FirstOrDefault();
+                                .ToList();            
             if (product == null)
             {
                 return BadRequest("Sản phẩm không tồn tại hoặc đã hết hàng.");
@@ -106,49 +122,109 @@ namespace WebAppBanHang.Controllers
 
         // BUY PRODUCT
         [HttpPost("Home/BuyProduct")]
-        public IActionResult BuyProduct(Product input, OrderDetail input1)
+        public IActionResult BuyProduct(ProductDto input)
         {
             //lay session nhan tu Login
             int userId = HttpContext.Session.GetInt32("UserId") ?? 0;
             if (userId == 0)
             {
-                return View(View("Login"));
+                return View("Index/Login");
             }
-            // Kiểm tra xem sản phẩm có tồn tại và còn hàng không
-            var product = _context.Products
-                            .Include(p => p.ProductDiscounts)
-                            .ThenInclude(pd => pd.Discount)
-                            .FirstOrDefault(p => p.ProductId == input.ProductId);
-            if (product == null || product.StockQuantity <= 0)
-            {
-                return BadRequest("Sản phẩm không tồn tại hoặc số lượng yêu cầu vượt quá số lượng trong kho.");
-            }
-            // Giam gia
-            var discountPercent = product.ProductDiscounts
-                            .Where(pd => pd.IsActive && pd.Discount.IsActive &&
-                                    pd.Discount.StartDate <= DateTime.Now &&
-                                    pd.Discount.EndDate >= DateTime.Now)
-                            .Select(pd => pd.Discount.DiscountPercent)
-                            .FirstOrDefault();
-            decimal finalPrice = product.Price*(1-(discountPercent/100));
+            // Kiem tra xem UserId va Status cua Order
+            var existingOrder = _context.Orders
+                .Where(o => o.UserId == userId && o.Status == "Pending" && o.IsActive)
+                .Include(o => o.OrderDetails)
+                .FirstOrDefault();
 
-            // Add OrderDetail
+            // tim discountId
+            var discountId = _context.ProductDiscounts
+                .Where(pd => pd.ProductId == input.ProductId && pd.IsActive)
+                .Join(_context.Discounts,
+                    pd => pd.DiscountId,
+                    d => d.DiscountId,
+                    (pd, d) => new { pd, d })
+                .Where(x => x.d.DiscountPercent == input.DiscountPercent)
+                .Select(x => x.d.DiscountId)
+                .FirstOrDefault();
 
-            // Add Order
-            var order = new Order
+            // Create new OrderDetail
+            var orderDetail = new OrderDetail
             {
-                UserId = userId,
-                OrderDate = DateTime.Now,
-                Status = "Pending",
+                ProductId = input.ProductId,
+                Quantity = input.Quantity,
+                Price = input.Price,
+                DiscountId = discountId != 0 ? discountId : null, // nếu không tìm thấy thì để null,
                 CreatedAt = DateTime.Now,
-                TotalAmount = finalPrice * input1.Quantity, // Tính tổng tiền
+                UpdatedAt = DateTime.Now,
                 IsActive = true
             };
-            // Giảm số lượng sản phẩm trong kho
-            //product.StockQuantity -= quantity;
-            _context.SaveChanges();
-            // Trả về thông báo thành công
-            return Ok("Mua hàng thành công!");
+            // Them hoac cap nhat Order
+            if (existingOrder != null)
+            {
+                // Cập nhật OrderDetails trong đơn hàng hiện tại
+                existingOrder.OrderDetails.Add(orderDetail);
+                // tinh lai tong tien
+                decimal total = 0;
+                foreach (var detail in existingOrder.OrderDetails)
+                {
+                    //total += detail.Quantity * input.Price * (1 - (input.DiscountPercent / 100m));
+                    var product = _context.Products.Find(detail.ProductId);//có thể bỏ
+                    if (product != null)
+                    {
+                        var discountPercent = _context.ProductDiscounts
+                            .Where(pd => pd.ProductId == detail.ProductId && pd.IsActive)
+                            .Join(_context.Discounts,
+                                pd => pd.DiscountId,
+                                d => d.DiscountId,
+                                (pd, d) => new { pd, d })
+                            .Select(x => (decimal?)x.d.DiscountPercent) // ép kiểu về decimal
+                            .FirstOrDefault() ?? 0m;
+                        total += detail.Quantity * product.Price * (1 - (discountPercent / 100m));
+                    }                    
+                }
+                //them tong tien vao Order
+                existingOrder.TotalAmount = total;
+                _context.SaveChanges();
+                return Ok("Cập nhật đơn hàng thành công!");
+            }
+            else
+            {
+                // Create new Order
+                var order = new Order
+                {
+                    UserId = userId,
+                    OrderDate = DateTime.Now,
+                    Status = "Pending",
+                    CreatedAt = DateTime.Now,
+                    //TotalAmount = 0, // Sẽ cập nhật sau khi tính toán
+                    IsActive = true,
+                    OrderDetails = new List<OrderDetail>()
+                };
+                // total amount
+                decimal total = input.Quantity * input.Price * (1 - (input.DiscountPercent / 100m));
+                //decimal total = 0;
+                var product = _context.Products.Find(input.ProductId);
+                if (product != null)
+                {
+                    var discountPercent = _context.ProductDiscounts
+                        .Where(pd => pd.ProductId == input.ProductId && pd.IsActive)
+                        .Join(_context.Discounts,
+                            pd => pd.DiscountId,
+                            d => d.DiscountId,
+                            (pd, d) => new { pd, d })
+                        .Select(x => (decimal?)x.d.DiscountPercent) //ep kiểu về decimal
+                        .FirstOrDefault() ?? 0m;                    
+                }
+            // Cập nhật tổng tiền trong đơn hàng
+            order.TotalAmount = total;
+                // Add OrderDetail to Order
+                order.OrderDetails.Add(orderDetail);
+                // save
+                _context.Orders.Add(order);
+                _context.SaveChanges();
+                // Trả về thông báo thành công
+                return Ok("Mua hàng thành công!");
+            }
         }
 
         #endregion NEW PRODUCT
@@ -504,8 +580,35 @@ namespace WebAppBanHang.Controllers
             return Ok(orders);
         }
 
+        // Delete Order Admin
+        [HttpDelete("/Home/DeleteOrderAdmin/{id}")]
+        public async Task<IActionResult> DeleteOrderAdmin(int id)
+        {
+            var order = _context.Orders.Find(id);
+            if (order == null)
+            {
+                return NotFound("Order not found.");
+            }
+            _context.Orders.Remove(order);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
         #endregion Table Order
 
+        // Table OrderDetail
+        #region Table OrderDetail
+        //GET orderdetails
+        public IActionResult GetOrderDetails()
+        {
+            var orderDetails = _context.OrderDetails.ToList();
+            if (orderDetails == null)
+            {
+                return NotFound("OrderDetail not found.");
+            }
+            return Ok(orderDetails);
+        }
+
+        #endregion Table OrderDetail
         // Table Discount
         #region Table Discount
         //GET discounts
@@ -539,7 +642,7 @@ namespace WebAppBanHang.Controllers
             discount.IsActive = input.IsActive ? input.IsActive : true;
             _context.Discounts.Add(discount);
             await _context.SaveChangesAsync();
-            return RedirectToAction();
+            return Ok();
         }
         // Delete Discount Admin
         [HttpDelete("/Home/DeleteDiscountAdmin/{id}")]
@@ -626,21 +729,215 @@ namespace WebAppBanHang.Controllers
 
             _context.ProductDiscounts.Add(productDiscount);
             await _context.SaveChangesAsync();
-            return RedirectToAction();
+            return Ok();
         }
-      
+
         #endregion Table ProductDiscount
         #endregion VIEW Admin
 
-        //shopping cart
+        //View ShoppingCart
+        #region VIEW ShoppingCart
+        [HttpGet]
+        //[Route("Home/ShoppingCart")]
+       
         public IActionResult ShoppingCart()
         {
             //lay session nhan tu Login
             var userName = HttpContext.Session.GetString("UserName");
             ViewBag.UserName = userName;
-            return View();
+
+            //
+            var model = new AllTablesViewModel
+            {
+                Products = _context.Products.ToList(),
+                Users = _context.Users.ToList(),
+                Orders = _context.Orders.ToList(),
+                OrderDetails = _context.OrderDetails.ToList(),
+                Discounts = _context.Discounts.ToList(),
+                ProductDiscounts = _context.ProductDiscounts.ToList()
+            };
+
+            return View(model);
+        }
+        // get shopping cart
+        [HttpGet("Home/GetShoppingCart")]
+        public IActionResult GetShoppingCart()
+        {
+            //lay session nhan tu Login
+            int userId = HttpContext.Session.GetInt32("UserId") ?? 0;
+            if (userId == 0)
+            {
+                return BadRequest("Bạn cần đăng nhập để xem giỏ hàng.");
+            }
+            var order = _context.Orders
+                .Where(o => o.UserId == userId && o.Status == "Pending" && o.IsActive)
+                .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.Product)
+                .ThenInclude(p => p.ProductDiscounts)
+                .ThenInclude(pd => pd.Discount)
+                .Select(o => new
+                {
+                    o.OrderId,
+                    o.UserId,
+                    o.OrderDate,
+                    o.Status,
+                    o.CreatedAt,
+                    o.TotalAmount,
+                    o.IsActive,
+                    OrderDetails = o.OrderDetails.Select(od => new
+                    {
+                        od.OrderDetailId,
+                        od.ProductId,
+                        od.Quantity,
+                        od.Price,
+                        od.DiscountId,
+                        Product = new
+                        {
+                            od.Product.Name,
+                            od.Product.Description,
+                            od.Product.Price,
+                            od.Product.StockQuantity,
+                            DiscountPercent = od.Product.ProductDiscounts
+                                .Where(pd => pd.IsActive && pd.Discount.IsActive &&
+                                             pd.Discount.StartDate <= DateTime.Now &&
+                                             pd.Discount.EndDate >= DateTime.Now)
+                                .Select(pd => pd.Discount.DiscountPercent)
+                                .FirstOrDefault()// lấy giảm giá đầu tiên nếu có, mặc định là 0
+                        }
+                    })
+                })
+                .FirstOrDefault();
+            if (order == null || !order.OrderDetails.Any())
+            {
+                //return NotFound("Giỏ hàng trống.");
+                return Ok(new List<object>()); // Trả về mảng rỗng
+            }
+            return Ok(order);//tra về danh sách chi tiết đơn hàng trong giỏ hàng return Ok(order.OrderDetails)
+        }
+        // get Order Completed
+        [HttpGet("Home/GetOrderCompleted")]
+        public IActionResult GetOrderCompleted()
+        {
+            //lay session nhan tu Login
+            int userId = HttpContext.Session.GetInt32("UserId") ?? 0;
+            if (userId == 0)
+            {
+                return BadRequest("Bạn cần đăng nhập để xem giỏ hàng.");
+            }
+            var order = _context.Orders
+                .Where(o => o.UserId == userId && o.Status == "Finished" && o.IsActive)
+                .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.Product)
+                .ThenInclude(p => p.ProductDiscounts)
+                .ThenInclude(pd => pd.Discount)
+                .Select(o => new
+                {
+                    o.OrderId,
+                    o.UserId,
+                    o.OrderDate,
+                    o.Status,
+                    o.CreatedAt,
+                    o.TotalAmount,
+                    o.IsActive,
+                    OrderDetails = o.OrderDetails.Select(od => new
+                    {
+                        od.OrderDetailId,
+                        od.ProductId,
+                        od.Quantity,
+                        od.Price,
+                        od.DiscountId,
+                        Product = new
+                        {
+                            od.Product.Name,
+                            od.Product.Description,
+                            od.Product.Price,
+                            od.Product.StockQuantity,
+                            DiscountPercent = od.Product.ProductDiscounts
+                                .Where(pd => pd.IsActive && pd.Discount.IsActive &&
+                                             pd.Discount.StartDate <= DateTime.Now &&
+                                             pd.Discount.EndDate >= DateTime.Now)
+                                .Select(pd => pd.Discount.DiscountPercent)
+                                .FirstOrDefault() // lấy giảm giá đầu tiên nếu có, mặc định là 0
+                        }
+                    })
+                })
+                .FirstOrDefault();
+            if (order == null || !order.OrderDetails.Any())
+            {
+                return Ok(new List<object>()); // Trả về mảng rỗng
+            }
+            return Ok(order);
         }
 
+        // Pay Order
+        [HttpPut("Home/PayOrder/{id}")]
+        public IActionResult PayOrder(int id)
+        {
+            int userId = HttpContext.Session.GetInt32("UserId") ?? 0;
+            if (userId == 0)
+            {
+                return BadRequest("Bạn cần đăng nhập để thanh toán.");
+            }
+            //var order = _context.Orders.FirstOrDefault(o => o.UserId == id);
+            var order = _context.Orders.Include(o => o.OrderDetails).FirstOrDefault(o => o.UserId == id && o.Status != "Pending");
+            if (order == null || order.UserId != userId || order.Status != "Pending" || !order.IsActive)
+            {
+                return NotFound("Đơn hàng không tồn tại hoặc đã được thanh toán.");
+            }
+
+            // Trừ tồn kho cho từng sản phẩm trong đơn hàng
+            foreach (var detail in order.OrderDetails)
+            {
+                var product = _context.Products.Find(detail.ProductId);
+                if (product == null || !product.IsActive) continue;
+
+                product.StockQuantity -= detail.Quantity;
+                if (product.StockQuantity <= 0)
+                {
+                    product.StockQuantity = 0;
+                    product.IsActive = false;
+
+                    // Vô hiệu hóa các OrderDetail liên quan đến sản phẩm này
+                    var relatedDetails = _context.OrderDetails.Where(od => od.ProductId == product.ProductId).ToList();
+                    foreach (var rd in relatedDetails)
+                    {
+                        rd.IsActive = false; // giả sử bạn có cột IsActive trong OrderDetail
+                    }
+                }
+            }
+
+            // Cập nhật trạng thái đơn hàng
+            order.Status = "Finished";
+
+            // Kiểm tra các đơn hàng khác
+            var otherOrders = _context.Orders
+                .Include(o => o.OrderDetails)
+                .Where(o => o.OrderId != id && o.Status == "Pending" && o.IsActive)
+                .ToList();
+
+            foreach (var otherOrder in otherOrders)
+            {
+                foreach (var detail in otherOrder.OrderDetails)
+                {
+                    var product = _context.Products.Find(detail.ProductId);
+                    if (product == null || !product.IsActive) continue;
+
+                    if (detail.Quantity > product.StockQuantity)
+                    {
+                        detail.Quantity = product.StockQuantity;
+                        if (product.StockQuantity == 0)
+                        {
+                            detail.IsActive = false; // giả sử bạn có cột IsActive trong OrderDetail
+                        }
+                    }
+                }
+            }
+
+            _context.SaveChanges();
+            return Ok("Thanh toán thành công!");
+        }
+
+        #endregion VIEW ShoppingCart
 
 
 
