@@ -25,7 +25,7 @@
     <!-- Phần hiển thị chính -->
     @* <div center-area class="col-md-10 text-break overflow-auto p-3" style="max-width: 100%;"> *@
     <div class="center-area">
-        <h2>Danh Sách Thông tin Người Dùng</h2>
+        @* <h2>Danh Sách Thông tin Người Dùng</h2> *@
         <div id="content-area"></div>
         <!--Nut button-->
         <div class="flex justify-content-between py-2">
@@ -237,7 +237,7 @@
             const contentArea = document.getElementById("content-area");
             switch (content) {
                 case 'tableuser':
-                    // contentArea.innerHTML = '<h3>New Products</h3><p>Here are the latest products.</p>';
+                    contentArea.innerHTML = '<h3>USER</h3>';
                     $(document).ready(function() {
                         renderTableUserAdmin();
                     });
@@ -245,6 +245,7 @@
                         $("#tableHead").html(`
                             <tr>
                                 <th scope="col">Number</th>
+                                <th scope="col">UserId</th>
                                 <th scope="col">UserName</th>
                                 <th scope="col">Password</th>
                                 <th scope="col">Role</th>
@@ -270,6 +271,7 @@
                                         $("#datatable").append(`
                                             <tr>
                                                 <td>${index +1 }</td>
+                                                <td>${item.userId}</td>
                                                 <td>${item.userName}</td>
                                                 <td>${item.password}</td>
                                                 <td>${item.role}</td>
@@ -301,7 +303,7 @@
                     }
                     break;
                 case 'tableproduct':
-                    // contentArea.innerHTML = '<h3>New Products</h3><p>Here are the latest products.</p>';
+                    contentArea.innerHTML = '<h3>PRODUCT</h3>';
                     $(document).ready(function() {
                         renderTableProductAdmin();
                     });
@@ -369,7 +371,7 @@
                     }
                     break;
                 case 'tableorder':
-                    // contentArea.innerHTML = '<h3>New Products</h3><p>Here are the latest products.</p>';
+                    contentArea.innerHTML = '<h3>ORDER</h3>';
                     $(document).ready(function() {
                         renderTableOrderAdmin();
                     });
@@ -424,7 +426,7 @@
                     }
                     break;
                 case 'tableorderdetail':
-                    // contentArea.innerHTML = '<h3>New Products</h3><p>Here are the latest products.</p>';
+                    contentArea.innerHTML = '<h3>ORDERDETAIL</h3>';
                     $(document).ready(function() {
                         renderTableOrderDetailAdmin();
                     });
@@ -484,7 +486,7 @@
                     }
                     break;
                 case 'tablediscount':
-                    // contentArea.innerHTML = '<h3>New Products</h3><p>Here are the latest products.</p>';
+                    contentArea.innerHTML = '<h3>DISCOUNT</h3>';
                     $(document).ready(function() {
                         renderTableDiscountAdmin();
                     });
@@ -546,7 +548,7 @@
                     }
                     break;
                 case 'tableproductdiscount':
-                    // contentArea.innerHTML = '<h3>New Products</h3><p>Here are the latest products.</p>';
+                    contentArea.innerHTML = '<h3>PRODUCT DISCOUNT</h3>';
                     $(document).ready(function() {
                         renderTableProductDiscountAdmin();
                     });
@@ -559,7 +561,6 @@
                                 <th scope="col">DiscountId</th>
                                 <th scope="col">CreatedAt</th>
                                 <th scope="col">UpdatedAt</th>                                
-                                <th scope="col">Even</th>
                             </tr>
                         `);
                         $.ajax({
@@ -579,14 +580,6 @@
                                                 <td>${item.discountId}</td>
                                                 <td>${item.createdAt}</td>
                                                 <td>${item.isActive}</td>
-                                                <td>
-                                                <a href="javascript:void(0);" class="px-2" onclick="deleteUserAdmin('${item.productDiscountId}')">
-                                                    Delete
-                                                </a>
-                                                <a href="javascript:void(0);" class="px-2" onclick="updateUserAdmin('${item.productDiscountId}')">
-                                                    Edit
-                                                </a>
-                                                </td>
                                             </tr>`
                                         );
                                     });
@@ -636,8 +629,8 @@
                     console.log("an form");
                     resetFormUser();
                     console.log("reset form");
-                    //renderTableUserAdmin(); //hàm này dùng để gọi lại
-                    changeContent('tableuser');//goi lai tableuser
+                    renderTableUserAdmin(); //hàm này dùng để gọi lại
+                    //changeContent('tableuser');//goi lai tableuser
                      alert("Them ThanhCong");                    
                 },
                 error: function (error) {
@@ -700,16 +693,30 @@
                     //khoa field username
                     //$("#username").prop("readonly", true);//$("#username").prop("disabled", true);
                     if (data.role === "admin") {
-                        $("#username").prop("readonly", false); // Mở khóa
+                        $("#username").prop("readonly", false); //Mở khóa
+
                     } else {
-                        $("#username").prop("readonly", true);  // Khóa lại
+                        $("#username").prop("readonly", true);  //Khóa lại
+
                     }
+                    // $("#fullname").prop("readonly", true); Mở khóa
+                    // $("#username").prop("readonly", true);
+                    // $("#dateofbirth").prop("readonly", true);
+                    // $("#phonenumber").prop("readonly", true);
+                    // $("#email").prop("readonly", true);
                     //khoa field fullname
-                    if (data.role === "admin") {
-                        $("#fullname").prop("readonly", false); // Mở khóa
-                    } else {
-                        $("#fullname").prop("readonly", true);  // Khóa lại
-                    }
+                    // if (data.role === "a") {
+                    //     $("#fullname").prop("readonly", true); Mở khóa
+                    //     $("#username").prop("readonly", true);
+                    //     $("#dateofbirth").prop("readonly", true);
+                    //      $("#phonenumber").prop("readonly", true);
+                    //       $("#email").prop("readonly", true);
+                    // } else {
+                    //     $("#fullname").prop("readonly", true);  Khóa lại
+                    //     $("#username").prop("readonly", true);
+                    //      $("#role").prop("readonly", true);
+                    //      $("#user_isactive").prop("readonly", true);
+                    // }
                 },
                 error: function (error) {
                     console.log(error);

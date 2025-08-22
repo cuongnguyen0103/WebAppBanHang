@@ -12,21 +12,16 @@
         <ul class="list-group">
             <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('tabshoppingcart')"> Shopping Cart </a> </li>
             <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('tabordercompleted')"> Order Completed </a></li>
-            <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('tabreturnorder')"> Return Order </a></li>            
+            @* <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('tabreturnorder')"> Return Order </a></li>             *@
         </ul>
     </div>
 
     <!-- Phần hiển thị chính -->
     @* <div center-area class="col-md-10 text-break overflow-auto p-3" style="max-width: 100%;"> *@
     <div class="center-area">
-        <h2>Danh Sách Thông tin Người Dùng</h2>
+        @* <h2>Danh Sách Thông tin Người Dùng</h2> *@
         <div id="content-area"></div>
-        <!--Nut button-->
-        <div class="flex justify-content-between py-2">
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal">Add User</button>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#productModal">Add Product</button>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#discountModal">Add Discount</button>
-        </div>
+        
         <div class="flex justify-content-between py-2">
             <table class="table table-bordered">
                 <thead id="tableHead">        
@@ -46,7 +41,7 @@
         function changeContent(tabName) {
             var contentArea = document.getElementById('content-area');
             if (tabName === 'tabshoppingcart') {
-                contentArea.innerHTML = '<h3>Shopping Cart Content</h3><p>Here you can manage your shopping cart.</p>';
+                contentArea.innerHTML = '<h3>SHOPPING CART</h3>';
                 $(document).ready(function() {
                     renderShoppingCart();
                 });
@@ -86,7 +81,7 @@
                                             <td>${discount}%</td>
                                             <td>${total.toLocaleString()} VND</td>
                                             <td>
-                                                <a href="javascript:void(0);" class="px-2" onclick="deleteUserAdmin('${data.userId}')">
+                                                <a href="javascript:void(0);" class="px-2" onclick="deleteOrderCustomer('${item.orderDetailId}')">
                                                     Delete
                                                 </a>
                                             </td>
@@ -119,7 +114,7 @@
                     });
                 }
             } else if (tabName === 'tabordercompleted') {
-                contentArea.innerHTML = '<h3>Order Completed Content</h3><p>Here you can view completed orders.</p>';
+                contentArea.innerHTML = '<h3>ORDER COMPLETED</h3>';
                 $(document).ready(function() {
                     renderOrderCompleted();
                 });
@@ -169,12 +164,7 @@
                                             <td>${item.quantity}</td>
                                             <td>${item.price}</td>
                                             <td>${discount}%</td>
-                                            <td>${total.toLocaleString()} VND</td>
-                                            <td>
-                                                <a href="javascript:void(0);" class="px-2" onclick="deleteUserAdmin('${data.userId}')">
-                                                    Delete
-                                                </a>
-                                            </td>
+                                            <td>${total.toLocaleString()} VND</td>                          
                                         </tr>
                                     `);
                                 });
@@ -204,9 +194,6 @@
                         }
                     });
                 }
-            } else if (tabName === 'tabreturnorder') {
-                contentArea.innerHTML = '<h3>Return Order Content</h3><p>Here you can manage return orders.</p>';
-
             }
         }
 
@@ -225,6 +212,26 @@
                     error: function(error) {
                         console.error("Error during payment:", error);
                         alert("Payment failed. Please try again.");
+                    }
+                });
+            }
+        }
+
+        // Delete Order Customer
+        function deleteOrderCustomer(ma_ao) {
+            console.log("Deleting order for userId:", ma_ao);
+            if (confirm("Are you sure you want to delete this order?")) {
+                $.ajax({
+                    url: '/Home/DeleteOrderDetail/' + ma_ao,
+                    type: 'DELETE',
+                    data: { userId: ma_ao },
+                    success: function(response) {
+                        alert("Order deleted successfully!");
+                        changeContent('tabshoppingcart'); // Refresh the shopping cart view
+                    },
+                    error: function(error) {
+                        console.error("Error deleting order:", error);
+                        alert("Failed to delete order. Please try again.");
                     }
                 });
             }

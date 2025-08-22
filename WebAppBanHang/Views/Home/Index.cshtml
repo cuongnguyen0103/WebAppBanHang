@@ -9,7 +9,7 @@
 <!-- Tab Index -->
 <div class="row">
     <!-- Sidebar bên trái -->
-    <h2 class="title">Chào mừng đến với trang Index!</h2>
+    @* <h2 class="title">Chào mừng đến với trang Index!</h2> *@
     <!--Search-->
     <div class="search-bar">
         <form id="searchForm" method="get" action="/Home/SearchProduct">
@@ -23,24 +23,14 @@
         <ul class="list-group">
             <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('newproducts')"> New Products </a> </li>
             <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('promotinalproduct')"> Promotional Products </a></li>
-            <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('allproduct')"> All Products </a></li>
-            <li>
-                <p>Classify</p>
-                <ul>
-                    <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('trousers')"> Trousers </a> </li>
-                    <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('shirts')"> Shirts </a> </li>
-                    <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('shoes')"> Shoes </a> </li>
-                    <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('sandals')"> Sandals </a> </li>
-                    <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('Accessories')"> Accessories </a> </li>
-                </ul>
-            </li>
+            <li class="list-group-item"><a href="javascript:void(0);" onclick="changeContent('allproduct')"> All Products </a></li>            
         </ul>
     </div>
 
     <!-- Phần hiển thị chính -->
     @* <div center-area class="col-md-10 text-break overflow-auto p-3" style="max-width: 100%;"> *@
     <div class="center-area">
-        <h2>Danh Sách Thông tin Người Dùng</h2>
+        @* <h2>Danh Sách Thông tin Người Dùng</h2> *@
         <div id="content-area"></div>
         <!-- Nội dung riêng của Điện thoại -->
         <div class="flex justify-content-between py-2">
@@ -70,7 +60,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="signupModalLabel">Sign Up</h5>
+                <h5 class="modal-title" id="signupModalLabel">Sign In</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -80,6 +70,7 @@
                         <label asp-for="UserName" for="username" class="form-label">Username</label>
                         <input asp-for="UserName" id="username" type="text" class="form-control">
                         <span asp-validation-for="UserName" class="text-danger"></span>
+                        <span id="username-error" class="text-danger"></span> <!--them thong bao loi-->
                     </div>
                     <div class="mb-3">
                         <label asp-for="Password" for="password" class="form-label">Password</label>
@@ -96,7 +87,7 @@
                         <input asp-for="Email" id="email" type="email" class="form-control">
                         <span asp-validation-for="Email" class="text-danger"></span>
                     </div>
-                    <button type="submit" class="btn btn-primary" onclick="signUpUser()">Xác nhận</button>
+                    <button type="submit" class="btn btn-primary" >Xác nhận</button>
                 </form>
             </div>
         </div>
@@ -113,7 +104,8 @@
             </div>
             <div class="modal-body">
                 <input type="text" id="productid" hidden class="form-control"> <!--id mđ ẩn đi-->
-                <form id="buyproductForm" method="post">
+                <form id="buyproductForm" method="post" >
+                    <!-- onsubmit="buyProduct(event)"-->
                     <div class="mb-3">
                         <label for="name" class="form-label">Name</label>
                         <input id="name" name="name" type="text" class="form-control">
@@ -155,12 +147,19 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
     <script>
+        // $("#signupModal").submit(function (event) {
+        //     event.preventDefault(); Ngăn reload
+        // });
             // Function to handle search
         $(document).ready(function() {
             $("#searchForm").on("submit", function (e) {
                 e.preventDefault(); // Ngăn reload trang
-                // searchproduct();
+                // searchproduct();            
             });
+            $("#signupUserForm").submit(function (event) { //gọi đến submit nên không cần onlick tại form
+                event.preventDefault();
+                signUpUser(); // Gọi hàm xử lý đăng ký
+            });            
         });
         function searchproduct() {       
             const query = document.getElementById("searchInput").value.trim();
@@ -195,16 +194,11 @@
                                     <td>${item.description}</td>
                                     <td>${item.price}</td>
                                     <td>${item.stockQuantity}</td>
-                                    <td>${item.discountPercent}</td>
+                                    <td>${item.discountPercent}%</td>
                                     <td>
                                     <a href="javascript:void(0);" class="px-2" onclick="getdatatobuyProduct('${item.productId}')">
                                         Buy
-                                    </a>
-                                    ${
-                                        item.stockQuantity > 0
-                                        ? `<a href="javascript:void(0);" class="px-2" onclick="getdatatobuyProduct('${item.productId}')">Buy</a>`
-                                        : `<span class="text-muted px-2" style="cursor: not-allowed;">Out of stock</span>`
-                                    }
+                                    </a>                                    
                                     </td>
                                 </tr>`
                             );
@@ -230,11 +224,12 @@
             const contentArea = document.getElementById("content-area");
             switch (content) {
                 case 'newproducts':
-                    contentArea.innerHTML = '<h3>New Products</h3><p>Here are the latest products.</p>';
-                    $(document).ready(function() {
-                        renderTableNewProduct();
-                    });
-                    function renderTableNewProduct(){
+                    contentArea.innerHTML = '<h3>NEW PRODUCTS</h3>';
+                    // $(document).ready(function() {
+                    //     renderTableNewProduct();
+                    // });
+                    renderTableNewProducts();
+                    function renderTableNewProducts(){
                         $("#tableHead").html(`
                             <tr>
                                 <th scope="col">Artical</th>
@@ -247,7 +242,7 @@
                             </tr>
                         `);
                         $.ajax({
-                            url: '/Home/NewProduct',
+                            url: '/Home/NewProducts',
                             type: 'GET',
                             success: function (data){
                                 $("#datatable").empty();
@@ -262,7 +257,7 @@
                                                 <td>${item.description}</td>
                                                 <td>${item.price}</td>                                                
                                                 <td>${item.stockQuantity}</td>
-                                                <td>${item.discountPercent}</td>
+                                                <td>${item.discountPercent}%</td>
                                                 <td>
                                                 <a href="javascript:void(0);" class="px-2" onclick="getdatatobuyProduct('${item.productId}')">
                                                     Buy
@@ -280,11 +275,12 @@
                     }
                     break;
                 case 'promotinalproduct':
-                    contentArea.innerHTML = '<h3>Promotional Products</h3><p>Check out our promotional products.</p>';
-                    $(document).ready(function() {
-                        renderTableUserController();
-                    });
-                    function renderTableUserController(){
+                    contentArea.innerHTML = '<h3>PROMOTIONAL PRODUCTS</h3>';
+                    // $(document).ready(function() {
+                    //     renderTablePromotinalProducts();
+                    // });
+                    renderTablePromotinalProducts();
+                    function renderTablePromotinalProducts(){
                         $("#tableHead").html(`
                             <tr>
                                 <th scope="col">Artical</th>
@@ -297,7 +293,7 @@
                             </tr>
                         `);
                         $.ajax({
-                            url: '/Home/NewProduct',
+                            url: '/Home/PromotionalProducts',
                             type: 'GET',
                             success: function (data){
                                 $("#datatable").empty();
@@ -312,9 +308,9 @@
                                                 <td>${item.description}</td>
                                                 <td>${item.price}</td>
                                                 <td>${item.stockQuantity}</td>
-                                                <td>${item.categoryId}</td>
+                                                <td>${item.discountPercent}%</td>
                                                 <td class="text-center">
-                                                <a href="javascript:void(0);" class="px-2" onclick="Buy('${item.id}')">
+                                                <a href="javascript:void(0);" class="px-2" onclick="getdatatobuyProduct('${item.productId}')">
                                                 Buy
                                                 </a>
                                                 </td>
@@ -330,11 +326,11 @@
                     }
                     break;
                 case 'allproduct':
-                    contentArea.innerHTML = '<h3>All Products</h3><p>Here is a list of all products.</p>';
+                    contentArea.innerHTML = '<h3>ALL PRODUCTS</h3>';
                     $(document).ready(function() {
-                        renderTableUserController();
+                        renderTableAllProducts();
                     });
-                    function renderTableUserController(){
+                    function renderTableAllProducts(){
                         $("#tableHead").html(`
                             <tr>
                                 <th scope="col">Artical</th>
@@ -347,7 +343,7 @@
                             </tr>
                         `);
                         $.ajax({
-                            url: '/Home/NewProduct',
+                            url: '/Home/AllProducts',
                             type: 'GET',
                             success: function (data){
                                 $("#datatable").empty();
@@ -362,9 +358,9 @@
                                                 <td>${item.description}</td>
                                                 <td>${item.price}</td>
                                                 <td>${item.stockQuantity}</td>
-                                                <td>${item.categoryId}</td>
+                                                <td>${item.discountPercent}%</td>
                                                 <td class="text-center">
-                                                <a href="javascript:void(0);" class="px-2" onclick="Buy('${item.id}')">
+                                                <a href="javascript:void(0);" class="px-2" onclick="getdatatobuyProduct('${item.productId}')">
                                                 Buy
                                                 </a>
                                                 </td>
@@ -378,257 +374,7 @@
                             }
                         });
                     }
-                    break;
-                case 'trousers':
-                    contentArea.innerHTML = '<h3>All Products</h3><p>Here is a list of all products.</p>';
-                    $(document).ready(function() {
-                        renderTableUserController();
-                    });
-                    function renderTableUserController(){
-                        $("#tableHead").html(`
-                            <tr>
-                                <th scope="col">Artical</th>
-                                <th scope="col">ProDucts Name</th>
-                                <th scope="col">Description</th>
-                                <th scope="col">Price</th>
-                                <th scope="col">Stock Quantity</th>
-                                <th scope="col">Discount</th>
-                                <th scope="col">Sự kiện</th>
-                            </tr>
-                        `);
-                        $.ajax({
-                            url: '/Home/NewProduct',
-                            type: 'GET',
-                            success: function (data){
-                                $("#datatable").empty();
-                                console.log("DATA CONTROLLER: ", data.length);
-                                console.log("DATA CONTROLLER: ", data);
-                                if(data.length > 0){
-                                    data.map((item, index) => {
-                                        $("#datatable").append(`
-                                            <tr>
-                                                <td>${index +1 }</td>
-                                                <td>${item.name}</td>
-                                                <td>${item.description}</td>
-                                                <td>${item.price}</td>
-                                                <td>${item.stockQuantity}</td>
-                                                <td>${item.categoryId}</td>
-                                                <td class="text-center">
-                                                <a href="javascript:void(0);" class="px-2" onclick="Buy('${item.id}')">
-                                                Buy
-                                                </a>
-                                                </td>
-                                            </tr>`
-                                        );
-                                    });
-                                }
-                            },
-                            error: function(error) {
-                                console.log(error)
-                            }
-                        });
-                    }
-                    break;
-                case 'shirts':
-                    contentArea.innerHTML = '<h3>All Products</h3><p>Here is a list of all products.</p>';
-                    $(document).ready(function() {
-                        renderTableUserController();
-                    });
-                    function renderTableUserController(){
-                        $("#tableHead").html(`
-                            <tr>
-                                <th scope="col">Artical</th>
-                                <th scope="col">ProDucts Name</th>
-                                <th scope="col">Description</th>
-                                <th scope="col">Price</th>
-                                <th scope="col">Stock Quantity</th>
-                                <th scope="col">Discount</th>
-                                <th scope="col">Sự kiện</th>
-                            </tr>
-                        `);
-                        $.ajax({
-                            url: '/Home/NewProduct',
-                            type: 'GET',
-                            success: function (data){
-                                $("#datatable").empty();
-                                console.log("DATA CONTROLLER: ", data.length);
-                                console.log("DATA CONTROLLER: ", data);
-                                if(data.length > 0){
-                                    data.map((item, index) => {
-                                        $("#datatable").append(`
-                                            <tr>
-                                                <td>${index +1 }</td>
-                                                <td>${item.name}</td>
-                                                <td>${item.description}</td>
-                                                <td>${item.price}</td>
-                                                <td>${item.stockQuantity}</td>
-                                                <td>${item.categoryId}</td>
-                                                <td class="text-center">
-                                                <a href="javascript:void(0);" class="px-2" onclick="Buy('${item.id}')">
-                                                Buy
-                                                </a>
-                                                </td>
-                                            </tr>`
-                                        );
-                                    });
-                                }
-                            },
-                            error: function(error) {
-                                console.log(error)
-                            }
-                        });
-                    }
-                    break;
-                case 'shoes':
-                    contentArea.innerHTML = '<h3>All Products</h3><p>Here is a list of all products.</p>';
-                    $(document).ready(function() {
-                        renderTableUserController();
-                    });
-                    function renderTableUserController(){
-                        $("#tableHead").html(`
-                            <tr>
-                                <th scope="col">Artical</th>
-                                <th scope="col">ProDucts Name</th>
-                                <th scope="col">Description</th>
-                                <th scope="col">Price</th>
-                                <th scope="col">Stock Quantity</th>
-                                <th scope="col">Discount</th>
-                                <th scope="col">Sự kiện</th>
-                            </tr>
-                        `);
-                        $.ajax({
-                            url: '/Home/NewProduct',
-                            type: 'GET',
-                            success: function (data){
-                                $("#datatable").empty();
-                                console.log("DATA CONTROLLER: ", data.length);
-                                console.log("DATA CONTROLLER: ", data);
-                                if(data.length > 0){
-                                    data.map((item, index) => {
-                                        $("#datatable").append(`
-                                            <tr>
-                                                <td>${index +1 }</td>
-                                                <td>${item.name}</td>
-                                                <td>${item.description}</td>
-                                                <td>${item.price}</td>
-                                                <td>${item.stockQuantity}</td>
-                                                <td>${item.categoryId}</td>
-                                                <td class="text-center">
-                                                <a href="javascript:void(0);" class="px-2" onclick="Buy('${item.id}')">
-                                                Buy
-                                                </a>
-                                                </td>
-                                            </tr>`
-                                        );
-                                    });
-                                }
-                            },
-                            error: function(error) {
-                                console.log(error)
-                            }
-                        });
-                    }
-                    break;
-                case 'sandals':
-                    contentArea.innerHTML = '<h3>All Products</h3><p>Here is a list of all products.</p>';
-                    $(document).ready(function() {
-                        renderTableUserController();
-                    });
-                    function renderTableUserController(){
-                        $("#tableHead").html(`
-                            <tr>
-                                <th scope="col">Artical</th>
-                                <th scope="col">ProDucts Name</th>
-                                <th scope="col">Description</th>
-                                <th scope="col">Price</th>
-                                <th scope="col">Stock Quantity</th>
-                                <th scope="col">Discount</th>
-                                <th scope="col">Sự kiện</th>
-                            </tr>
-                        `);
-                        $.ajax({
-                            url: '/Home/NewProduct',
-                            type: 'GET',
-                            success: function (data){
-                                $("#datatable").empty();
-                                console.log("DATA CONTROLLER: ", data.length);
-                                console.log("DATA CONTROLLER: ", data);
-                                if(data.length > 0){
-                                    data.map((item, index) => {
-                                        $("#datatable").append(`
-                                            <tr>
-                                                <td>${index +1 }</td>
-                                                <td>${item.name}</td>
-                                                <td>${item.description}</td>
-                                                <td>${item.price}</td>
-                                                <td>${item.stockQuantity}</td>
-                                                <td>${item.categoryId}</td>
-                                                <td class="text-center">
-                                                <a href="javascript:void(0);" class="px-2" onclick="Buy('${item.id}')">
-                                                Buy
-                                                </a>
-                                                </td>
-                                            </tr>`
-                                        );
-                                    });
-                                }
-                            },
-                            error: function(error) {
-                                console.log(error)
-                            }
-                        });
-                    }
-                    break;
-                case 'Accessories':
-                    contentArea.innerHTML = '<h3>All Products</h3><p>Here is a list of all products.</p>';
-                    $(document).ready(function() {
-                        renderTableUserController();
-                    });
-                    function renderTableUserController(){
-                        $("#tableHead").html(`
-                            <tr>
-                                <th scope="col">Artical</th>
-                                <th scope="col">ProDucts Name</th>
-                                <th scope="col">Description</th>
-                                <th scope="col">Price</th>
-                                <th scope="col">Stock Quantity</th>
-                                <th scope="col">Discount</th>
-                                <th scope="col">Sự kiện</th>
-                            </tr>
-                        `);
-                        $.ajax({
-                            url: '/Home/NewProduct',
-                            type: 'GET',
-                            success: function (data){
-                                $("#datatable").empty();
-                                console.log("DATA CONTROLLER: ", data.length);
-                                console.log("DATA CONTROLLER: ", data);
-                                if(data.length > 0){
-                                    data.map((item, index) => {
-                                        $("#datatable").append(`
-                                            <tr>
-                                                <td>${index +1 }</td>
-                                                <td>${item.name}</td>
-                                                <td>${item.description}</td>
-                                                <td>${item.price}</td>
-                                                <td>${item.stockQuantity}</td>
-                                                <td>${item.categoryId}</td>
-                                                <td class="text-center">
-                                                <a href="javascript:void(0);" class="px-2" onclick="Buy('${item.id}')">
-                                                Buy
-                                                </a>
-                                                </td>
-                                            </tr>`
-                                        );
-                                    });
-                                }
-                            },
-                            error: function(error) {
-                                console.log(error)
-                            }
-                        });
-                    }
-                    break;
+                    break;                
                 default:
                     contentArea.innerHTML = "<h3>Danh Sách Thông tin Người Dùng</h3>";
             }
@@ -654,23 +400,24 @@
                 },
                 success: function (data) {
                     //console.log(data);
-                    console.log("Sign up success");
-                    // Kiểm tra nếu có lỗi mật khẩu từ ViewData
-                    // console.log("Sign up success:",$(data).find("#PasswordError").length);
-                    // if ($(data).find("#PasswordError").length > 0) {
-                    //     Hiển thị lại modal với thông báo lỗi
-                    //     $(".modal-body").html($(data).find(".modal-body").html());
-                    //     $("#signupModal").modal('show');
-                    // } else {
-                    //     console.log("Đăng ký thành công");
-                    //     $("#signupModal").modal('hide');
-                    //     resetSignUp();
-                    // }
-                    $("#signupModal").modal('hide');
-                    resetSignUp();
+                    // Kiểm tra nếu có lỗi từ ViewData
+                    // console.log("Sign up success");
+                    // Kiểm tra username-error
+                    //console.log("Sign up success:",$(data).find("#username-error").length);
+                    if (data.length>0) {
+                        alert("Đăng ký thành công!");
+                        $("#signupModal").modal('hide');
+                        resetSignUp();
+                         window.location.href = "/Home/Index"; // load lai trang de hien thong tin dang nhap
+                    } else {
+                        $("#username-error").text(data.usernameError);
+                    }
+                    // $("#signupModal").modal('hide');
+                    // resetSignUp();
                 },
-                error: function (error) {
-                    console.log(error)
+                error: function (error,xhr) {
+                    console.log(error);
+                    console.log("Lỗi server:", xhr);
                 }
             });
         }
@@ -731,6 +478,7 @@
             $("#quantity").val("");
         }
         function buyProduct() {
+            //event.preventDefault();
             let productid = $("#productid").val();
             let name = $("#name").val();
             let description = $("#description").val();
@@ -756,11 +504,25 @@
                     console.log("Buy success");
                     $("#buyModal").modal('hide');
                     resetBuyForm();
+                    // if (data.requireLogin) {
+                    //     $("#signupModal").modal('show');
+                    //     $("#buyModal").modal('hide');
+                    // } else if (data.success) {
+                    //     console.log("Buy success");
+                    //     $("#buyModal").modal('hide');
+                    //     resetBuyForm();
+                    // }
                 },
                 error: function (error) {
                     console.log(error)
                 }
             });
         }
+        // xoa thong bao username ton tai
+        //     $(document).ready(function () {
+        //     $("#UserName").on("input", function () {
+        //         $("#username-error").text("");
+        //     });
+        // });
     </script>
 }

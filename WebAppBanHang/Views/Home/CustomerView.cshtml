@@ -3,15 +3,15 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 @* @model WebAppBanHang.ViewModels.AllTablesViewModel; *@
-@model List<WebAppBanHang.Models.Entity.User>
+@* @model List<WebAppBanHang.Models.Entity.User> *@
+@model WebAppBanHang.Models.Entity.User
 <div>
-    <h2>Customer</h2>
-    <h1>Count User: @Model.Count</h1>
+    @* <h2>Customer Information: @Model.UserName</h2> *@
     <div class="row">
         <div class="col-md-12">
             <table class="table table-striped">
                 <thead>
-                    <tr>
+                    @* <tr>
                         <th>UserId</th>
                         <th>UserName</th>
                         <th>FullName</th>
@@ -22,26 +22,188 @@
                         <th>CreatedAt</th>
                         <th>UpdatedAt</th>
                         <th>IsActive</th>
-                    </tr>
+                    </tr> *@
                 </thead>
                 <tbody id="datatable">
-                    @foreach (var user in Model)
-                    {
-                        <tr>
-                            <td>@user.UserId</td>
-                            <td>@user.UserName</td>
-                            <td>@user.FullName</td>
-                            <td>@user.Role</td>
-                            <td>@user.Email</td>
-                            <td>@user.PhoneNumber</td>
-                            <td>@user.DateOfBirth</td>
-                            <td>@user.CreatedAt</td>
-                            <td>@user.UpdatedAt</td>
-                            <td>@(user.IsActive ? "Active" : "Inactive")</td>
-                        </tr>
-                    }
-                </tbody>
+                    @* <tr>
+                        <td>@Model.UserId</td>
+                        <td>@Model.UserName</td>
+                        <td>@Model.FullName</td>
+                        <td>@Model.Role</td>
+                        <td>@Model.Email</td>
+                        <td>@Model.PhoneNumber</td>
+                        <td>@Model.DateOfBirth?.ToString("yyyy-MM-dd")</td>
+                        <td>@Model.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td>@Model.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td>@(Model.IsActive ? "Active" : "Inactive")</td>
+                    </tr>                  *@
             </table>
         </div>
     </div>
 </div>
+
+
+<!--TAB HIDDEN-->
+<!--USER-->
+<div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userModalLabel">Add Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="userid" hidden class="form-control"> <!--id mđ ẩn đi-->
+                <form id="adminForm" method="post">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input id="username" name="username" type="text" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input id="password" name="password" type="password" class="form-control">
+                    </div>
+                    @* <div class="mb-3">
+                        <label for="role" class="form-label">Role</label>
+                        <input id="role" name="role" type="text" class="form-control">
+                    </div> *@
+                    <div class="mb-3">
+                        <label for="fullname" class="form-label">FullName</label>
+                        <input id="fullname" name="fullname" type="text" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="dateofbirth" class="form-label">Date Of Birth</label>
+                        <input id="dateofbirth" name="dateofbirth" type="date" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input id="email" name="email" type="email" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="phonenumber" class="form-label">PhoneNumber</label>
+                        <input id="phonenumber" name="phonenumber" type="text" class="form-control">
+                    </div>
+                    @* <div class="mb-3">
+                        <label for="user_isactive" class="form-label">isActive</label>
+                        <input id="user_isactive" name="user_isactive" type="text" class="form-control">
+                    </div> *@
+                    <button type="submit" class="btn btn-primary" onclick="updateForm(@Model.UserId)">Xác nhận</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            renderCustomer();
+        });
+        function renderCustomer(){
+            $("#tableHead").html(`
+                <tr>
+                    <th scope="col">Number</th>
+                    <th scope="col">UserId</th>
+                    <th scope="col">UserName</th>
+                    <th scope="col">FullName</th>
+                    <th scope="col">Role</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">PhoneNumber</th>
+                    <th scope="col">DateOfBirth</th>
+                    <th scope="col">CreatedAt</th>
+                    <th scope="col">UpdatedAt</th>
+                    <th scope="col">IsActive</th>
+                    <th scope="col">Even</th>
+                </tr>
+            `);
+            $.ajax({
+                url: '/Home/GetUserCustomer',
+                type: 'GET',
+                success: function(data) {
+                    console.log("Dữ liệu trả về:", data);
+                    console.log("Kiểu:", typeof data);
+                    const user = data;
+                            $('#datatable').html(`
+                            <table class="table table-bordered">
+                                <tr><th>Username</th><td>${user.userName}</td></tr>
+                                <tr><th>Full Name</th><td>${user.fullName}</td></tr>
+                                <tr><th>Role</th><td>${user.role}</td></tr>
+                                <tr><th>Email</th><td>${user.email}</td></tr>
+                                <tr><th>Phone Number</th><td>${user.phoneNumber}</td></tr>
+                                <tr><th>Date of Birth</th><td>${user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : ''}</td></tr>
+                                <tr><th>Created At</th><td>${new Date(user.createdAt).toLocaleString()}</td></tr>
+                                <tr><th>Updated At</th><td>${new Date(user.updatedAt).toLocaleString()}</td></tr>
+                                <tr><th>Status</th><td>${user.isActive ? 'Active' : 'Inactive'}</td></tr>
+                                <tr>
+                                    <th>Actions</th>
+                                    <td>
+                                        <button class="btn btn-primary" onclick="updateUser(${user.userId})">Update User</button>
+                                    </td>
+                                </tr>
+                            </table>
+                        `);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching users:', error);
+                }
+            });
+        }
+        function updateUser(ma_ao) {
+            $.ajax({
+                url: '/Home/DetailUserCustomer/' + ma_ao,
+                type: 'GET',                
+                success: function(data) {
+                    console.log("Dữ liệu trả về:", data);
+                    $("#userid").val(data.userId);
+                    $("#username").val(data.userName);
+                    $("#password").val(data.password);
+                    $("#fullname").val(data.fullName);
+                    $("#dateofbirth").val(data.dateOfBirth ? new Date(data.dateOfBirth).toISOString().split('T')[0] : '');
+                    $("#email").val(data.email);
+                    $("#phonenumber").val(data.phoneNumber);
+                    $("#user_isactive").val(data.isActive ? 'Active' : 'Inactive');
+
+                    //khoa field
+                    $("#username").prop("readonly", true);
+                    $('#userModal').modal('show');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error updating user:', error);
+                }
+            });            
+        }
+
+        function updateForm(userId) {
+            let userid = $("#userid").val();
+            let username = $("#username").val();
+            let password = $("#password").val();
+            let fullname = $("#fullname").val();
+            let dateofbirth = $("#dateofbirth").val();
+            let email = $("#email").val();
+            let phonenumber = $("#phonenumber").val();
+            let user_isactive = $("#user_isactive").val() === 'Active';
+            $.ajax({
+                url: '/Home/UpdateUserCustomer',
+                type: 'POST',
+                data: {
+                    userId: userid,
+                    userName: username,
+                    password: password,
+                    fullName: fullname,
+                    dateOfBirth: dateofbirth,
+                    email: email,
+                    phoneNumber: phonenumber,
+                    isActive: user_isactive
+                },
+                success: function(data) {
+                    console.log("Cập nhật thành công:", data);
+                    $('#userModal').modal('hide');
+                    renderCustomer(); //goi lai ham hien thi
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error updating user:', error);
+                }
+            });
+        }
+    </script>
+}

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using WebAppBanHang.Models;
@@ -29,10 +30,6 @@ namespace WebAppBanHang.Controllers
 
             return View();
         }
-
-        // NEW PRODUCT
-        #region NEW PRODUCT
-
         // Search Product
         [HttpGet("Home/SearchProduct/{name}")]
         public IActionResult SearchProduct(string name)
@@ -66,170 +63,6 @@ namespace WebAppBanHang.Controllers
             }
             return Ok(products);
         }
-        // GET NEW PRODUCT
-        public IActionResult NewProduct()
-        {
-            var products = _context.Products
-                                .Include(p => p.ProductDiscounts)
-                                .ThenInclude(pd => pd.Discount)
-                                .Select(p => new
-                                {
-                                p.ProductId,
-                                p.Name,
-                                p.Description,
-                                p.Price,
-                                p.StockQuantity,
-                                DiscountPercent = p.ProductDiscounts
-                                    .Where(pd => pd.IsActive && pd.Discount.IsActive &&
-                                                pd.Discount.StartDate <= DateTime.Now &&
-                                                pd.Discount.EndDate >= DateTime.Now)
-                                    .Select(pd => pd.Discount.DiscountPercent)
-                                .FirstOrDefault() // lấy giảm giá đầu tiên nếu có, mặc định là 0
-                                })
-                                .ToList();
-            return Ok(products);
-        }
-
-        // GET DATA PRODUCT BY ID
-        [HttpGet("Home/GetProductById/{productid}")]
-        public async Task<IActionResult> GetProductById(int productid)
-        {
-            var product = _context.Products
-                                .Include(p => p.ProductDiscounts)
-                                .ThenInclude(pd => pd.Discount)
-                                .Where(p => p.ProductId == productid)
-                                .Select(p => new ProductDto                 // DTO
-                                {
-                                    ProductId = p.ProductId,
-                                    Name = p.Name,
-                                    Description = p.Description,
-                                    Price = p.Price,
-                                    StockQuantity = p.StockQuantity,
-                                    DiscountPercent = p.ProductDiscounts
-                                    .Where(pd => pd.IsActive && pd.Discount.IsActive &&
-                                                pd.Discount.StartDate <= DateTime.Now &&
-                                                pd.Discount.EndDate >= DateTime.Now)
-                                    .Select(pd => pd.Discount.DiscountPercent)
-                                .FirstOrDefault() // lấy giảm giá đầu tiên nếu có, mặc định là 0
-                                })
-                                .ToList();            
-            if (product == null)
-            {
-                return BadRequest("Sản phẩm không tồn tại hoặc đã hết hàng.");
-            }
-            return Ok(product);
-        }
-
-        // BUY PRODUCT
-        [HttpPost("Home/BuyProduct")]
-        public IActionResult BuyProduct(ProductDto input)
-        {
-            //lay session nhan tu Login
-            int userId = HttpContext.Session.GetInt32("UserId") ?? 0;
-            if (userId == 0)
-            {
-                return View("Index/Login");
-            }
-            // Kiem tra xem UserId va Status cua Order
-            var existingOrder = _context.Orders
-                .Where(o => o.UserId == userId && o.Status == "Pending" && o.IsActive)
-                .Include(o => o.OrderDetails)
-                .FirstOrDefault();
-
-            // tim discountId
-            var discountId = _context.ProductDiscounts
-                .Where(pd => pd.ProductId == input.ProductId && pd.IsActive)
-                .Join(_context.Discounts,
-                    pd => pd.DiscountId,
-                    d => d.DiscountId,
-                    (pd, d) => new { pd, d })
-                .Where(x => x.d.DiscountPercent == input.DiscountPercent)
-                .Select(x => x.d.DiscountId)
-                .FirstOrDefault();
-
-            // Create new OrderDetail
-            var orderDetail = new OrderDetail
-            {
-                ProductId = input.ProductId,
-                Quantity = input.Quantity,
-                Price = input.Price,
-                DiscountId = discountId != 0 ? discountId : null, // nếu không tìm thấy thì để null,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
-                IsActive = true
-            };
-            // Them hoac cap nhat Order
-            if (existingOrder != null)
-            {
-                // Cập nhật OrderDetails trong đơn hàng hiện tại
-                existingOrder.OrderDetails.Add(orderDetail);
-                // tinh lai tong tien
-                decimal total = 0;
-                foreach (var detail in existingOrder.OrderDetails)
-                {
-                    //total += detail.Quantity * input.Price * (1 - (input.DiscountPercent / 100m));
-                    var product = _context.Products.Find(detail.ProductId);//có thể bỏ
-                    if (product != null)
-                    {
-                        var discountPercent = _context.ProductDiscounts
-                            .Where(pd => pd.ProductId == detail.ProductId && pd.IsActive)
-                            .Join(_context.Discounts,
-                                pd => pd.DiscountId,
-                                d => d.DiscountId,
-                                (pd, d) => new { pd, d })
-                            .Select(x => (decimal?)x.d.DiscountPercent) // ép kiểu về decimal
-                            .FirstOrDefault() ?? 0m;
-                        total += detail.Quantity * product.Price * (1 - (discountPercent / 100m));
-                    }                    
-                }
-                //them tong tien vao Order
-                existingOrder.TotalAmount = total;
-                _context.SaveChanges();
-                return Ok("Cập nhật đơn hàng thành công!");
-            }
-            else
-            {
-                // Create new Order
-                var order = new Order
-                {
-                    UserId = userId,
-                    OrderDate = DateTime.Now,
-                    Status = "Pending",
-                    CreatedAt = DateTime.Now,
-                    //TotalAmount = 0, // Sẽ cập nhật sau khi tính toán
-                    IsActive = true,
-                    OrderDetails = new List<OrderDetail>()
-                };
-                // total amount
-                decimal total = input.Quantity * input.Price * (1 - (input.DiscountPercent / 100m));
-                //decimal total = 0;
-                var product = _context.Products.Find(input.ProductId);
-                if (product != null)
-                {
-                    var discountPercent = _context.ProductDiscounts
-                        .Where(pd => pd.ProductId == input.ProductId && pd.IsActive)
-                        .Join(_context.Discounts,
-                            pd => pd.DiscountId,
-                            d => d.DiscountId,
-                            (pd, d) => new { pd, d })
-                        .Select(x => (decimal?)x.d.DiscountPercent) //ep kiểu về decimal
-                        .FirstOrDefault() ?? 0m;                    
-                }
-            // Cập nhật tổng tiền trong đơn hàng
-            order.TotalAmount = total;
-                // Add OrderDetail to Order
-                order.OrderDetails.Add(orderDetail);
-                // save
-                _context.Orders.Add(order);
-                _context.SaveChanges();
-                // Trả về thông báo thành công
-                return Ok("Mua hàng thành công!");
-            }
-        }
-
-        #endregion NEW PRODUCT
-
-        #endregion
 
         #region LOGIN/LOGOUT/USERINFO
         //LOGIN
@@ -244,7 +77,7 @@ namespace WebAppBanHang.Controllers
             var user = _context.Users.FirstOrDefault(u => u.UserName == username);
             if (user == null)
             {
-                return NotFound("User not found.");
+                return BadRequest("Incorrect UserName.");
             }
             if (user.Password != password)
             {
@@ -275,23 +108,34 @@ namespace WebAppBanHang.Controllers
             if (!ModelState.IsValid)
             {
                 return View(input);
-            }            
+            }
+            // Kiem tra username-error
+            var existingUser = _context.Users.FirstOrDefault(u => u.UserName == input.UserName);
+            if (existingUser != null)
+            {
+                return Json(new { success = false, usernameError = "Tên đăng nhập đã tồn tại." });
+            }
             // get data from input
             User user = new User();
             user.UserName = input.UserName;
             user.Password = input.Password;
             user.ConfirmPassword = input.ConfirmPassword;
-            user.Role = string.IsNullOrWhiteSpace(input.Role) ? "customer" : input.Role;
+            //user.Role = string.IsNullOrWhiteSpace(input.Role) ? "customer" : input.Role;
+            user.Role = "admin";
             user.Email = input.Email;
             user.IsActive = input.IsActive ? input.IsActive : true;
 
-            _context.Users.Add(user);  
+            _context.Users.Add(user);
             await _context.SaveChangesAsync();
             // lay session
             //HttpContext.Session.SetString("UserName", user.UserName);
             //HttpContext.Session.SetString("Role", user.Role);
             //return View("Index");
             //return RedirectToAction("Index", "Home");
+            // lay session
+            HttpContext.Session.SetInt32("UserId", user.UserId);
+            HttpContext.Session.SetString("UserName", user.UserName);
+            HttpContext.Session.SetString("Role", user.Role);
             return View("Index");
         }
 
@@ -324,20 +168,382 @@ namespace WebAppBanHang.Controllers
             //return View(user);
         }
         #endregion
+        // NEW PRODUCT (san pham moi trong vong 15 ngay tu ngay tao)
+        #region NEW PRODUCT
+        // GET NEW PRODUCT 
+        //public IActionResult NewProduct()
+        //{
+        //    var products = _context.Products
+        //                        .Include(p => p.ProductDiscounts)
+        //                        .ThenInclude(pd => pd.Discount)
+        //                        .Select(p => new
+        //                        {
+        //                            p.ProductId,
+        //                            p.Name,
+        //                            p.Description,
+        //                            p.Price,
+        //                            p.StockQuantity,
+        //                            DiscountPercent = p.ProductDiscounts
+        //                            .Where(pd => pd.IsActive && pd.Discount.IsActive &&
+        //                                        pd.Discount.StartDate <= DateTime.Now &&
+        //                                        pd.Discount.EndDate >= DateTime.Now)
+        //                            .Select(pd => pd.Discount.DiscountPercent)
+        //                        .FirstOrDefault() // lấy giảm giá đầu tiên nếu có, mặc định là 0
+        //                        })
+        //                        .ToList();
+        //    return Ok(products);
+        //}
+        [HttpGet("Home/NewProducts")]
+        public IActionResult NewProducts()
+        {
+            //lay session nhan tu Login
+            //var userName = HttpContext.Session.GetString("UserName");
+            //ViewBag.UserName = userName;
+            // Lay danh sach san pham moi trong vong 15 ngay
+            var products = _context.Products
+                .Where(p => p.CreatedAt >= DateTime.Now.AddDays(-15) && p.IsActive)
+                .Include(p => p.ProductDiscounts)
+                .ThenInclude(pd => pd.Discount)
+                .Select(p => new ProductDto
+                {
+                    ProductId = p.ProductId,
+                    Name = p.Name,
+                    Description = p.Description,
+                    Price = p.Price,
+                    StockQuantity = p.StockQuantity,
+                    DiscountPercent = p.ProductDiscounts
+                        .Where(pd => pd.IsActive && pd.Discount.IsActive &&
+                                    pd.Discount.StartDate <= DateTime.Now &&
+                                    pd.Discount.EndDate >= DateTime.Now)
+                        .Select(pd => (decimal?)pd.Discount.DiscountPercent)
+                        .FirstOrDefault() ?? 0 // lấy giảm giá đầu tiên nếu có, mặc định là 0
+                })
+                .ToList();
+            return Ok(products);
+        }        
+
+        #endregion NEW PRODUCT
+
+        // Promotional Products (san pham co giam gia và lớn hơn 0)
+        #region PROMOTIONAL PRODUCTS
+        [HttpGet("Home/PromotionalProducts")]
+        public IActionResult PromotionalProducts()
+        {
+            //lay session nhan tu Login
+            //var userName = HttpContext.Session.GetString("UserName");
+            //ViewBag.UserName = userName;
+            // Lay danh sach san pham co giam gia
+            var products = _context.Products
+                .Where(p => p.ProductDiscounts.Any(pd => pd.IsActive && pd.Discount.IsActive &&
+                                                        pd.Discount.StartDate <= DateTime.Now &&
+                                                        pd.Discount.EndDate >= DateTime.Now) && p.IsActive)
+                .Include(p => p.ProductDiscounts)
+                .ThenInclude(pd => pd.Discount)
+                .Select(p => new ProductDto
+                {
+                    ProductId = p.ProductId,
+                    Name = p.Name,
+                    Description = p.Description,
+                    Price = p.Price,
+                    StockQuantity = p.StockQuantity,
+                    DiscountPercent = p.ProductDiscounts
+                        .Where(pd => pd.IsActive && pd.Discount.IsActive &&
+                                    pd.Discount.StartDate <= DateTime.Now &&
+                                    pd.Discount.EndDate >= DateTime.Now)
+                        .Select(pd => (decimal?)pd.Discount.DiscountPercent)
+                        .FirstOrDefault() ?? 0 // lấy giảm giá đầu tiên nếu có, mặc định là 0
+                })
+                .ToList();
+            return Ok(products);
+        }
+
+        #endregion PROMOTIONAL PRODUCTS
+
+        // GET ALL PRODUCTS
+        #region GET ALL PRODUCTS
+        [HttpGet("Home/AllProducts")]
+        public IActionResult AllProducts()
+        {
+            //lay session nhan tu Login
+            //var userName = HttpContext.Session.GetString("UserName");
+            //ViewBag.UserName = userName;
+            // Lay danh sach tat ca san pham
+            var products = _context.Products
+                .Where(p => p.IsActive) // chi lay san pham active
+                .Include(p => p.ProductDiscounts)
+                .ThenInclude(pd => pd.Discount)
+                .Select(p => new ProductDto
+                {
+                    ProductId = p.ProductId,
+                    Name = p.Name,
+                    Description = p.Description,
+                    Price = p.Price,
+                    StockQuantity = p.StockQuantity,
+                    DiscountPercent = p.ProductDiscounts
+                        .Where(pd => pd.IsActive && pd.Discount.IsActive &&
+                                    pd.Discount.StartDate <= DateTime.Now &&
+                                    pd.Discount.EndDate >= DateTime.Now)
+                        .Select(pd => (decimal?)pd.Discount.DiscountPercent)
+                        .FirstOrDefault() ?? 0 // lấy giảm giá đầu tiên nếu có, mặc định là 0
+                })
+                .ToList();
+            return Ok(products);
+        }
+        #endregion GET ALL PRODUCTS
+        // BUY PRODUCT
+        //xac thuc người dùng đã đăng nhập và mua sản phẩm
+        #region BUY PRODUCT
+        [HttpPost("Home/BuyProduct")]
+        public IActionResult BuyProduct(ProductDto input)
+        {
+            //lay session nhan tu Login
+            int userId = HttpContext.Session.GetInt32("UserId") ?? 0;
+            if (userId == 0)
+            {
+                return Json(new { success = false, requireLogin = true });
+            }
+            else
+            {
+                // kiem tra so luong ton kho
+                var product_sl = _context.Products.Find(input.ProductId);
+                if (product_sl == null || product_sl.StockQuantity < input.Quantity)
+                {
+                    return BadRequest("Sản phẩm không đủ số lượng trong kho.");
+                }
+                // Kiem tra xem UserId va Status cua Order
+                var existingOrder = _context.Orders
+                    .Where(o => o.UserId == userId && o.Status == "Pending" && o.IsActive)
+                    .Include(o => o.OrderDetails)
+                    .FirstOrDefault();
+
+                // tim discountId
+                var discountId = _context.ProductDiscounts
+                    .Where(pd => pd.ProductId == input.ProductId && pd.IsActive)
+                    .Join(_context.Discounts,
+                        pd => pd.DiscountId,
+                        d => d.DiscountId,
+                        (pd, d) => new { pd, d })
+                    .Where(x => x.d.DiscountPercent == input.DiscountPercent)
+                    .Select(x => x.d.DiscountId)
+                    .FirstOrDefault();
+
+                // Create new OrderDetail
+                var orderDetail = new OrderDetail
+                {
+                    ProductId = input.ProductId,
+                    Quantity = input.Quantity,
+                    Price = input.Price,
+                    DiscountId = discountId != 0 ? discountId : null, // nếu không tìm thấy thì để null,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now,
+                    IsActive = true
+                };
+                // Them hoac cap nhat Order
+                if (existingOrder != null)
+                {
+                    // Cập nhật OrderDetails trong đơn hàng hiện tại
+                    //kiem tra xem OrderDetail da ton tai chua
+                    var existingOrderDetail = existingOrder.OrderDetails
+                        .FirstOrDefault(od => od.ProductId == input.ProductId && od.IsActive);
+                    if (existingOrderDetail != null)
+                    {
+                        // Cập nhật số lượng và giá của OrderDetail hiện tại
+                        existingOrderDetail.Quantity += input.Quantity;
+                        existingOrderDetail.Price = input.Price;
+                        existingOrderDetail.DiscountId = discountId != 0 ? discountId : null; // nếu không tìm thấy thì để null
+                    }
+                    else
+                    {
+                        // Thêm OrderDetail mới vào đơn hàng hiện tại
+                        existingOrder.OrderDetails.Add(orderDetail);
+                    }
+                    // tinh lai tong tien
+                    decimal total = 0;
+                    foreach (var detail in existingOrder.OrderDetails)
+                    {
+                        //total += detail.Quantity * input.Price * (1 - (input.DiscountPercent / 100m));
+                        var product = _context.Products.Find(detail.ProductId);//có thể bỏ
+                        if (product != null)
+                        {
+                            var discountPercent = _context.ProductDiscounts
+                                .Where(pd => pd.ProductId == detail.ProductId && pd.IsActive)
+                                .Join(_context.Discounts,
+                                    pd => pd.DiscountId,
+                                    d => d.DiscountId,
+                                    (pd, d) => new { pd, d })
+                                .Select(x => (decimal?)x.d.DiscountPercent) // ép kiểu về decimal
+                                .FirstOrDefault() ?? 0m;
+                            total += detail.Quantity * product.Price * (1 - (discountPercent / 100m));
+                        }
+                    }
+                    //them tong tien vao Order
+                    existingOrder.TotalAmount = total;
+                    _context.SaveChanges();
+                    return Ok("Cập nhật đơn hàng thành công!");
+                }
+                else
+                {
+                    // Create new Order
+                    var order = new Order
+                    {
+                        UserId = userId,
+                        OrderDate = DateTime.Now,
+                        Status = "Pending",
+                        CreatedAt = DateTime.Now,
+                        //TotalAmount = 0, // Sẽ cập nhật sau khi tính toán
+                        IsActive = true,
+                        OrderDetails = new List<OrderDetail>()
+                    };
+                    // total amount
+                    decimal total = input.Quantity * input.Price * (1 - (input.DiscountPercent / 100m));
+                    //decimal total = 0;
+                    var product = _context.Products.Find(input.ProductId);
+                    if (product != null)
+                    {
+                        var discountPercent = _context.ProductDiscounts
+                            .Where(pd => pd.ProductId == input.ProductId && pd.IsActive)
+                            .Join(_context.Discounts,
+                                pd => pd.DiscountId,
+                                d => d.DiscountId,
+                                (pd, d) => new { pd, d })
+                            .Select(x => (decimal?)x.d.DiscountPercent) //ep kiểu về decimal
+                            .FirstOrDefault() ?? 0m;
+                    }
+                    // Cập nhật tổng tiền trong đơn hàng
+                    order.TotalAmount = total;
+                    // Add OrderDetail to Order
+                    order.OrderDetails.Add(orderDetail);
+
+                    //// cap nhat so luong ton kho
+                    //product_sl.StockQuantity -= input.Quantity;
+                    //if (product_sl.StockQuantity == 0)
+                    //{
+                    //    // Nếu số lượng tồn kho bằng 0, đánh dấu sản phẩm là không hoạt động
+                    //    product_sl.IsActive = false;
+                    //}
+                    //_context.Products.Update(product_sl);
+
+                    // save
+                    _context.Orders.Add(order);
+                    _context.SaveChanges();
+                    // Trả về thông báo thành công
+                    return Ok("Mua hàng thành công!");
+                }
+
+            }
+        }
+        // GET DATA PRODUCT BY ID
+        [HttpGet("Home/GetProductById/{productid}")]
+        public async Task<IActionResult> GetProductById(int productid)
+        {
+            var product = _context.Products
+                                .Include(p => p.ProductDiscounts)
+                                .ThenInclude(pd => pd.Discount)
+                                .Where(p => p.ProductId == productid)
+                                .Select(p => new ProductDto                 // DTO
+                                {
+                                    ProductId = p.ProductId,
+                                    Name = p.Name,
+                                    Description = p.Description,
+                                    Price = p.Price,
+                                    StockQuantity = p.StockQuantity,
+                                    DiscountPercent = p.ProductDiscounts
+                                    .Where(pd => pd.IsActive && pd.Discount.IsActive &&
+                                                pd.Discount.StartDate <= DateTime.Now &&
+                                                pd.Discount.EndDate >= DateTime.Now)
+                                    .Select(pd => pd.Discount.DiscountPercent)
+                                .FirstOrDefault() // lấy giảm giá đầu tiên nếu có, mặc định là 0
+                                })
+                                .ToList();
+            if (product == null)
+            {
+                return BadRequest("Sản phẩm không tồn.");
+            }
+            return Ok(product);
+        }
+        #endregion BUY PRODUCT
+
+        #endregion
+       
 
         //VIEW CUSTOMER
         #region VIEW CUSTOMER
         public IActionResult CustomerView()
         {
-            var products = _context.Users.ToList();
+            //lay userId tu session
+            var userId = HttpContext.Session.GetInt32("UserId");
+
+            var products = _context.Users.Find(userId);
             if (products == null)
             {
                 return NotFound("Product not found.");
             }
             return View(products);
         }
+        // GET USER Customer
+        [HttpGet]
+        public IActionResult GetUserCustomer()
+        {
+            //lay userId tu session
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+            {
+                return RedirectToAction("Login");
+            }
+            var user = _context.Users.Find(userId);
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+            return Ok(user);
+        }
+        // get detail User customer
+        [HttpGet("/Home/DetailUserCustomer/{id}")]
+        public async Task<IActionResult> DetailUserCustomer(int id)
+        {
+            //lay du lieu sql
+            var item = _context.Users.FirstOrDefault(x => x.UserId == id);
+            if (item == null) return NotFound();
+            return Ok(item);
+        }
+        // update User
+        [HttpPost]
+        public async Task<IActionResult> UpdateUserCustomer(User input)
+        {
+            //Data Validation
+            ModelState.Remove(nameof(input.ConfirmPassword));
+            if (!ModelState.IsValid)
+            {
+                // Returns a View with data errors to display information
+                return View(input);
+            }
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+            {
+                return RedirectToAction("Login");
+            }
+            var update = _context.Users.Find(userId);
+            if (update == null)
+            {
+                return NotFound();
+            }
+            else
+            {
+                update.UserName = input.UserName;
+                update.Password = input.Password;
+                update.FullName = input.FullName;
+                update.Role = string.IsNullOrWhiteSpace(input.Role) ? "customer" : input.Role;
+                update.DateOfBirth = input.DateOfBirth;
+                update.Email = input.Email;
+                update.PhoneNumber = input.PhoneNumber;
+                update.UpdatedAt = DateTime.Now;
+                update.IsActive = input.IsActive ? input.IsActive : true;
+                await _context.SaveChangesAsync();
+                return RedirectToAction("CustomerView");
+            }
+        }
         #endregion  VIEW CUSTOMER
-        
+
         //VIEW Admin
         #region VIEW Admin
         public IActionResult AdminView()
@@ -379,33 +585,32 @@ namespace WebAppBanHang.Controllers
                 // Returns a View with data errors to display information
                 return View(input);
             }
-            User user = new User();
-            user.UserName = input.UserName;
-            user.Password = input.Password;
-            user.Role = string.IsNullOrWhiteSpace(input.Role) ? "customer" : input.Role;
-            user.FullName = input.FullName;
-            user.DateOfBirth = input.DateOfBirth;
-            user.Email = input.Email;
-            user.PhoneNumber = input.PhoneNumber;
-            user.CreatedAt = DateTime.Now;
-            user.UpdatedAt = DateTime.Now;
-            user.IsActive = input.IsActive ? input.IsActive : true;
-
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-            return Ok();
-            //var userId = HttpContext.Session.GetInt32("UserId");
-            //if (userId == null)
-            //{
-            //    return RedirectToAction("Login");
-            //}
-            //var user = _context.Users.Find(userId);
-            //if (user == null)
-            //{
-            //    return NotFound("Ko thay thong tin nguoi dung");
-            //}
-            //return View(user);
+            // Kiem tra UserName da ton tai
+            var existingUser = _context.Users.FirstOrDefault(u => u.UserName == input.UserName);
+            if (existingUser != null)
+            {
+                return NotFound("User đã tồn tại!!");
             }
+            else
+            {
+                User user = new User();
+                user.UserName = input.UserName;
+                user.Password = input.Password;
+                user.Role = string.IsNullOrWhiteSpace(input.Role) ? "customer" : input.Role;
+                user.FullName = input.FullName;
+                user.DateOfBirth = input.DateOfBirth;
+                user.Email = input.Email;
+                user.PhoneNumber = input.PhoneNumber;
+                user.CreatedAt = DateTime.Now;
+                user.UpdatedAt = DateTime.Now;
+                user.IsActive = input.IsActive ? input.IsActive : true;
+
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+                return Ok();
+            }
+                      
+        }
 
         // Delete User Admin
         [HttpDelete("/Home/DeleteUserAdmin/{id}")]
@@ -499,18 +704,7 @@ namespace WebAppBanHang.Controllers
 
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
-            return RedirectToAction();
-            //var userId = HttpContext.Session.GetInt32("UserId");
-            //if (userId == null)
-            //{
-            //    return RedirectToAction("Login");
-            //}
-            //var user = _context.Users.Find(userId);
-            //if (user == null)
-            //{
-            //    return NotFound("Ko thay thong tin nguoi dung");
-            //}
-            //return View(user);
+            return RedirectToAction();            
         }
 
         // Delete Product Admin
@@ -873,14 +1067,14 @@ namespace WebAppBanHang.Controllers
         [HttpPut("Home/PayOrder/{id}")]
         public IActionResult PayOrder(int id)
         {
-            int userId = HttpContext.Session.GetInt32("UserId") ?? 0;
-            if (userId == 0)
-            {
-                return BadRequest("Bạn cần đăng nhập để thanh toán.");
-            }
+            //int userId = HttpContext.Session.GetInt32("UserId") ?? 0;
+            //if (userId == 0)
+            //{
+            //    return BadRequest("Bạn cần đăng nhập để thanh toán.");
+            //}
             //var order = _context.Orders.FirstOrDefault(o => o.UserId == id);
             var order = _context.Orders.Include(o => o.OrderDetails).FirstOrDefault(o => o.UserId == id && o.Status != "Pending");
-            if (order == null || order.UserId != userId || order.Status != "Pending" || !order.IsActive)
+            if (order == null || order.UserId != id || order.Status != "Pending" || !order.IsActive)
             {
                 return NotFound("Đơn hàng không tồn tại hoặc đã được thanh toán.");
             }
@@ -936,6 +1130,68 @@ namespace WebAppBanHang.Controllers
             _context.SaveChanges();
             return Ok("Thanh toán thành công!");
         }
+
+        // DELETE OrderDetail of ShoppingCart
+        [HttpDelete("Home/DeleteOrderDetail/{id}")]
+        public IActionResult DeleteOrderDetail(int id)
+        {
+            //lay session nhan tu Login
+            int userId = HttpContext.Session.GetInt32("UserId") ?? 0;
+            if (userId == 0)
+            {
+                return BadRequest("Bạn cần đăng nhập để xóa sản phẩm khỏi giỏ hàng.");
+            }
+            var orderDetail = _context.OrderDetails.FirstOrDefault(od => od.OrderDetailId == id && od.IsActive);
+            if (orderDetail == null)
+            {
+                return NotFound("Chi tiết đơn hàng không tồn tại.");
+            }
+
+            // Xóa chi tiết đơn hàng
+            _context.OrderDetails.Remove(orderDetail);
+            _context.SaveChanges();
+
+            // Reload lại order từ database
+            var order = _context.Orders
+                .Include(o => o.OrderDetails)
+                .FirstOrDefault(o => o.OrderId == orderDetail.OrderId);
+
+            // cap nhat lai tien trong Order
+            order = _context.Orders.FirstOrDefault(o => o.UserId == userId && o.Status == "Pending" && o.IsActive);
+            if (order != null)
+            {
+                // Tính lại tổng tiền của đơn hàng với discount
+                decimal total = 0;
+                foreach (var detail in order.OrderDetails)
+                {
+                    var product = _context.Products.Find(detail.ProductId);
+                    if (product != null)
+                    {
+                        // Tính tổng tiền với discount
+                        var discountPercent = _context.ProductDiscounts
+                            .Where(pd => pd.ProductId == detail.ProductId && pd.IsActive)
+                            .Join(_context.Discounts,
+                                pd => pd.DiscountId,
+                                d => d.DiscountId,
+                                (pd, d) => new { pd, d })
+                            .Select(x => (decimal?)x.d.DiscountPercent) // ép kiểu về decimal
+                            .FirstOrDefault() ?? 0m;
+                        total += detail.Quantity * product.Price * (1 - (discountPercent / 100m));
+                    }
+                }
+                //// Xóa chi tiết đơn hàng
+                //_context.OrderDetails.Remove(orderDetail);
+                //_context.SaveChanges();
+
+                //return Ok("Xóa sản phẩm khỏi giỏ hàng thành công!");
+                //order.TotalAmount = order.OrderDetails
+                //    .Where(od => od.IsActive)
+                //    .Sum(od => od.Price * od.Quantity);
+                _context.SaveChanges();
+            }
+            return Ok("Xóa sản phẩm khỏi giỏ hàng thành công!");
+        }
+
 
         #endregion VIEW ShoppingCart
 
